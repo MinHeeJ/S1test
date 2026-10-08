@@ -1,0 +1,905 @@
+.resume-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--bg);
+}
+.resume-nav {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+.resume-nav a {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 14px;
+}
+.resume-nav a[aria-current] {
+  background: var(--sunken);
+  font-weight: 500;
+}
+.resume-nav .resume-brand {
+  height: 36px;
+  font-weight: 600;
+}
+.resume-nav footer {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+}
+.resume-shell main {
+  min-width: 0;
+}
+.resume-skip {
+  position: absolute;
+  left: -10000px;
+}
+.resume-skip:focus {
+  left: 12px;
+  top: 12px;
+  z-index: 100;
+}
+.resume-library {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px;
+  display: grid;
+  gap: 20px;
+}
+.resume-library h1 {
+  font: 500 30px/36px var(--font-display);
+  margin: 0;
+}
+.resume-library-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.resume-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 204px));
+  align-items: start;
+  gap: 22px 28px;
+}
+.resume-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.resume-thumbnail {
+  display: block;
+  aspect-ratio: 210 / 297;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-1);
+  background: #fff;
+  transition:
+    transform var(--d1) var(--ease),
+    box-shadow var(--d1) var(--ease);
+}
+.resume-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-2);
+}
+.resume-thumbnail:active {
+  transform: scale(0.98);
+}
+.resume-thumbnail .resume-renderer {
+  width: 794px;
+  transform: none;
+  transform-origin: top left;
+}
+.resume-card-meta {
+  display: flex;
+  gap: 4px;
+}
+.resume-card-meta > div {
+  min-width: 0;
+  flex: 1;
+}
+.resume-card h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+.resume-card small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.resume-card details {
+  position: relative;
+}
+.resume-card details[open] {
+  z-index: 2;
+}
+.resume-card details button {
+  display: block;
+  width: 100%;
+}
+.resume-create-card {
+  height: auto !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  aspect-ratio: 210 / 297;
+  border: 1.5px dashed var(--line-2) !important;
+  background: transparent !important;
+}
+.resume-shell button,
+.resume-dialog button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--d1) var(--ease),
+    transform var(--d1) var(--ease);
+}
+.resume-shell button:hover,
+.resume-dialog button:hover {
+  background: var(--sunken);
+}
+.resume-shell button:active,
+.resume-dialog button:active {
+  transform: scale(0.97);
+}
+.resume-shell button:disabled {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  background: var(--sunken);
+}
+.resume-shell button.primary,
+.resume-dialog button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.resume-shell button.danger,
+.resume-dialog button.danger {
+  background: var(--danger);
+  color: white;
+}
+.resume-shell label,
+.resume-dialog label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.resume-shell input:not([type="checkbox"]),
+.resume-shell select,
+.resume-shell textarea,
+.resume-dialog input,
+.resume-dialog select {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: var(--raised);
+  color: var(--ink);
+}
+.resume-shell textarea {
+  height: 120px;
+  padding: 12px;
+  resize: vertical;
+}
+.resume-shell input:focus,
+.resume-shell textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.resume-shell input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.resume-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.resume-dialog {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-3);
+  background: var(--raised);
+  width: min(480px, 100%);
+  max-height: 90svh;
+  overflow: auto;
+  animation: resume-arrive var(--d2) var(--ease);
+}
+.resume-dialog h2 {
+  margin: 0;
+  font: 500 26px/32px var(--font-display);
+}
+.resume-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: var(--bg);
+  background: var(--ink);
+  box-shadow: var(--shadow-3);
+}
+.resume-editor {
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+}
+.resume-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.resume-completion {
+  justify-self: start;
+}
+.resume-split {
+  display: grid;
+  grid-template-columns: minmax(300px, 42%) minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.resume-input-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+.resume-section {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface);
+}
+.resume-section h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.resume-section.is-hidden {
+  opacity: 0.5;
+}
+.resume-section-actions,
+.resume-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.resume-fields {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+.resume-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.field-warning {
+  color: var(--danger);
+}
+.resume-style {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.resume-preview-panel {
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  position: sticky;
+  top: 20px;
+  max-height: calc(100svh - 40px);
+  overflow: auto;
+  padding: 20px;
+  min-width: 0;
+}
+.resume-mobile-tabs {
+  display: none;
+}
+.resume-renderer {
+  display: grid;
+  gap: 24px;
+  color: #202020;
+}
+.resume-paper {
+  width: 794px;
+  min-height: 1123px;
+  padding: 54px 48px;
+  background: #fff;
+}
+.resume-paper.modern {
+  display: grid;
+  grid-template-columns: 32% 68%;
+  padding: 0;
+}
+.paper-left {
+  background: color-mix(in srgb, var(--resume-color) 10%, white);
+  padding: 54px 24px;
+}
+.paper-right {
+  min-width: 0;
+}
+.modern .paper-right {
+  padding: 54px 32px;
+}
+.paper-block {
+  padding: 0 0 14px;
+  break-inside: avoid;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.paper-block h2 {
+  color: var(--resume-color);
+  border-bottom: 1px solid var(--resume-color);
+  margin: 0 0 10px;
+  font-size: 1.2em;
+}
+.paper-block p {
+  margin: 0;
+  line-height: 1.6;
+}
+.paper-block img {
+  width: 90px;
+  height: 120px;
+  object-fit: cover;
+  float: right;
+  margin: 0 0 10px 10px;
+}
+.paper-measure {
+  position: absolute;
+  left: -100000px;
+  visibility: hidden;
+  width: 698px;
+  pointer-events: none;
+}
+.paper-measure.modern {
+  width: 794px;
+}
+.paper-measure .measure-left {
+  width: 206px;
+}
+.paper-measure .measure-right {
+  width: 698px;
+}
+.paper-measure.modern .measure-right {
+  width: 476px;
+}
+.resume-print-frame {
+  position: fixed;
+  width: 794px;
+  height: 1123px;
+  left: -100000px;
+  border: 0;
+}
+@keyframes resume-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .resume-shell {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .resume-nav a span {
+    display: none;
+  }
+  .resume-nav footer {
+    font-size: 11px;
+  }
+  .resume-nav footer button {
+    padding: 0;
+    font-size: 11px;
+  }
+}
+@media (max-width: 1023px) {
+  .resume-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .resume-mobile-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .resume-split[data-tab="입력"] .resume-preview-panel {
+    display: none;
+  }
+  .resume-split[data-tab="미리보기"] .resume-input-panel {
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .resume-shell {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .resume-nav {
+    height: auto;
+    width: 100%;
+    bottom: 0;
+    top: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 30;
+  }
+  .resume-nav a {
+    min-height: 52px;
+    font-size: 11px;
+    padding: 4px;
+    flex-direction: column;
+  }
+  .resume-nav footer {
+    margin-top: 0;
+    font-size: 11px;
+  }
+  .resume-library {
+    padding: 20px 16px;
+  }
+  .resume-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .resume-editor {
+    padding: 12px;
+  }
+  .resume-toast {
+    bottom: 100px;
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: white;
+    margin: 0;
+  }
+  .paper-measure {
+    display: none;
+  }
+  .resume-renderer {
+    gap: 0;
+    display: block;
+  }
+  .resume-paper {
+    width: 210mm;
+    min-height: 297mm;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .resume-paper:last-child {
+    break-after: auto;
+  }
+  .paper-block {
+    break-inside: avoid;
+  }
+}
+
+/* Document-library surfaces follow the reference without inventing extra product routes. */
+.resume-library-heading p {
+  margin: 10px 0 0;
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.resume-library-heading .resume-eyebrow {
+  margin: 0 0 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+.resume-library-tools {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+.resume-library-tools label {
+  width: min(100%, 280px);
+}
+.resume-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.resume-create-card small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.resume-create-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  font-size: 24px;
+  font-weight: 400;
+}
+.resume-card summary {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  list-style: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 22px;
+}
+.resume-card summary::-webkit-details-marker {
+  display: none;
+}
+.resume-card summary:hover {
+  background: var(--hover);
+}
+.resume-card details[open] {
+  background: var(--raised);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+}
+.resume-card details[open] summary {
+  margin-left: auto;
+}
+.resume-card details button {
+  min-width: 140px;
+  border: 0;
+  text-align: left;
+}
+.resume-card details button:last-child {
+  color: var(--danger-text);
+}
+.resume-card details[open] {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 4px;
+}
+.resume-card-meta {
+  position: relative;
+  padding-right: 36px;
+}
+.resume-card-meta > details {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.resume-error-state {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+  border-radius: 12px;
+  line-height: 1.7;
+}
+.resume-error-state button {
+  margin: 12px 8px 0 0;
+}
+.resume-empty-state {
+  display: grid;
+  gap: 12px;
+  padding: 24px 0;
+  justify-items: start;
+}
+.resume-empty-state p {
+  margin: 0;
+  font: 500 24px/1.5 var(--font-display);
+}
+.resume-empty-state small {
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.resume-skeleton {
+  background: var(--sunken);
+  border-radius: 6px;
+}
+.resume-skeleton-paper {
+  aspect-ratio: 210 / 297;
+}
+.resume-skeleton-title {
+  height: 16px;
+  width: 75%;
+}
+.resume-page-state {
+  padding: 32px;
+}
+.resume-editor-skeleton .resume-skeleton {
+  height: 65svh;
+}
+.resume-toolbar {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  gap: 10px;
+}
+.resume-shell .resume-title-button {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 600;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resume-shell .resume-save-status {
+  margin-right: auto;
+  border: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.resume-shell .resume-save-status[data-state="저장됨"] {
+  color: var(--accent-text);
+}
+.resume-shell .resume-save-status[data-state="저장 실패·다시 시도"] {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+.resume-shell button.primary:hover,
+.resume-dialog button.primary:hover {
+  background: var(--accent-hover);
+}
+.resume-shell button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.resume-dialog button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.resume-shell button[aria-busy="true"],
+.resume-dialog button[aria-busy="true"] {
+  cursor: progress;
+}
+.resume-completion {
+  display: grid;
+  gap: 5px;
+  height: auto !important;
+  min-width: 200px;
+  padding: 10px 14px !important;
+}
+.resume-progress {
+  height: 4px;
+  width: 100%;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.resume-progress > span {
+  display: block;
+  height: 100%;
+  transition: width var(--d2) var(--ease);
+}
+.resume-preview-controls {
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.resume-preview-controls label {
+  display: flex;
+  align-items: center;
+}
+.resume-preview-controls select {
+  width: 92px;
+}
+.resume-paper {
+  box-shadow: var(--shadow-2);
+}
+.resume-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.resume-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+.resume-nav a:hover {
+  background: var(--hover);
+}
+.resume-nav a {
+  transition: background var(--d1) var(--ease);
+}
+.resume-item {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.resume-item > .resume-fields {
+  flex-basis: 100%;
+}
+.resume-item > button:first-child {
+  flex: 1;
+  text-align: left;
+}
+.resume-section > small {
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+.resume-section-actions button {
+  font-size: 12px;
+  height: 30px;
+}
+.drag-handle {
+  touch-action: none;
+  cursor: grab !important;
+}
+.resume-shell input:disabled {
+  color: var(--ink-3);
+  background: var(--sunken);
+  cursor: not-allowed;
+}
+.resume-shell select:focus,
+.resume-dialog input:focus,
+.resume-dialog select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+@media (max-width: 1279px) and (min-width: 1024px) {
+  .resume-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 204px));
+  }
+}
+@media (max-width: 1023px) {
+  .resume-preview-panel {
+    position: static;
+    max-height: none;
+  }
+  .resume-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 204px));
+  }
+}
+@media (max-width: 639px) {
+  .resume-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .resume-create-card small {
+    max-width: 100px;
+    line-height: 1.6;
+  }
+  .resume-library-tools label {
+    width: 100%;
+  }
+  .resume-count {
+    margin-left: 0;
+  }
+  .resume-account {
+    gap: 6px;
+    font-size: 11px;
+  }
+  .resume-preview-panel {
+    padding: 12px;
+  }
+  .resume-toolbar {
+    padding-bottom: 12px;
+  }
+  .resume-shell .resume-title-button {
+    max-width: 180px;
+  }
+}
+@media (pointer: coarse) {
+  .resume-shell input:not([type="checkbox"]),
+  .resume-shell select,
+  .resume-shell textarea,
+  .resume-dialog input,
+  .resume-dialog select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .resume-card summary {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media print {
+  .resume-paper {
+    box-shadow: none;
+  }
+}
+
+.resume-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.resume-section-header h2 {
+  margin: 0;
+  flex: 1;
+}
+.resume-section-header small {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.resume-shell .resume-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 600;
+}
+.resume-style [aria-label="강조색"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resume-style [aria-label="강조색"] button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--surface);
+}
+.resume-style [aria-pressed="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .resume-shell main {
+    flex: 1;
+  }
+  .resume-card details[open] {
+    top: auto;
+    bottom: 0;
+  }
+}

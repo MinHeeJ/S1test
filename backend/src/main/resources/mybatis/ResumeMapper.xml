@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.common.persistence.ResumeMapper">
+  <resultMap id="row" type="com.resumecraft.common.persistence.ResumeRow">
+    <constructor>
+      <arg column="id"
+          javaType="java.util.UUID"
+          name="id"
+          typeHandler="com.resumecraft.common.persistence.UuidTypeHandler" />
+      <arg column="user_id"
+          javaType="java.util.UUID"
+          name="userId"
+          typeHandler="com.resumecraft.common.persistence.UuidTypeHandler" />
+      <arg column="title"
+          javaType="java.lang.String"
+          name="title" />
+      <arg column="template"
+          javaType="java.lang.String"
+          name="template" />
+      <arg column="style"
+          javaType="com.fasterxml.jackson.databind.JsonNode"
+          name="style"
+          typeHandler="com.resumecraft.common.persistence.JsonNodeTypeHandler" />
+      <arg column="content"
+          javaType="com.fasterxml.jackson.databind.JsonNode"
+          name="content"
+          typeHandler="com.resumecraft.common.persistence.JsonNodeTypeHandler" />
+      <arg column="deleted"
+          javaType="_boolean"
+          name="deleted" />
+      <arg column="created_at"
+          javaType="java.time.OffsetDateTime"
+          name="createdAt" />
+      <arg column="updated_at"
+          javaType="java.time.OffsetDateTime"
+          name="updatedAt" />
+    </constructor>
+  </resultMap>
+  <sql id="columns">id, user_id, title, template, style, content, deleted, created_at, updated_at</sql>
+  <sql id="owned">
+    id = #{id,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+    AND user_id = #{userId,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+    AND deleted = FALSE
+  </sql>
+  <select id="findOwned" resultMap="row">
+    SELECT <include refid="columns" />
+    FROM resume
+    WHERE <include refid="owned" />
+  </select>
+  <select id="listOwned" resultMap="row">
+    SELECT <include refid="columns" />
+    FROM resume
+    WHERE user_id = #{userId,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+      AND deleted = FALSE
+    ORDER BY updated_at DESC, id ASC
+    LIMIT #{limit}
+    OFFSET #{offset}
+  </select>
+  <select id="listFilteredOwned" resultMap="row">
+    SELECT <include refid="columns" />
+    FROM resume
+    WHERE user_id = #{userId,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+      AND deleted = FALSE
+    <if test="filter != null">
+      AND STRPOS(title, #{filter}) &gt; 0
+    </if>
+    ORDER BY updated_at DESC, id ASC
+    LIMIT #{limit}
+    OFFSET #{offset}
+  </select>
+  <select id="countOwned" resultType="long">
+    SELECT COUNT(*)
+    FROM resume
+    WHERE user_id = #{userId,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+      AND deleted = FALSE
+  </select>
+  <insert id="insert">
+    INSERT INTO resume (id, user_id, title, template, style, content, deleted, created_at, updated_at)
+    VALUES (
+      #{id,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler},
+      #{userId,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler},
+      #{title}, #{template},
+      #{style,typeHandler=com.resumecraft.common.persistence.JsonNodeTypeHandler},
+      #{content,typeHandler=com.resumecraft.common.persistence.JsonNodeTypeHandler},
+      #{deleted}, #{createdAt}, #{updatedAt}
+    )
+  </insert>
+  <update id="updateOwned">
+    UPDATE resume
+    <set>
+      <if test="title != null">title = #{title},</if>
+      template = #{template},
+      style = #{style,typeHandler=com.resumecraft.common.persistence.JsonNodeTypeHandler},
+      content = #{content,typeHandler=com.resumecraft.common.persistence.JsonNodeTypeHandler},
+      updated_at = #{updatedAt}
+    </set>
+    WHERE <include refid="owned" />
+  </update>
+  <update id="renameOwned">
+    UPDATE resume
+    SET title = #{title}, updated_at = #{updatedAt}
+    WHERE <include refid="owned" />
+  </update>
+  <update id="deleteOwned">
+    UPDATE resume
+    SET deleted = TRUE, updated_at = #{updatedAt}
+    WHERE <include refid="owned" />
+  </update>
+</mapper>
