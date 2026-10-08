@@ -1,0 +1,18 @@
+node_modules/
+.next/
+dist/
+build/
+target/
+coverage/
+.vite/
+.cache/
+*.log
+*.local
+.aiops-runtime/
+test-results/
+playwright-report/
+codegen-context/
+
+# Playwright verifier artifacts
+**/test-results/
+**/playwright-report/
