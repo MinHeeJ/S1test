@@ -1,0 +1,37 @@
+.photo-picker {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.photo-picker h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  line-height: 28px;
+}
+.photo-select {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  min-height: 160px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--sunken);
+  border-radius: 8px;
+}
+.resume-photo {
+  display: block;
+  width: 120px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.photo-actions {
+  display: flex;
+  gap: 8px;
+}
+.photo-hint {
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 16px;
+}
+.photo-picker[aria-busy="true"] {
+  cursor: progress;
+}
