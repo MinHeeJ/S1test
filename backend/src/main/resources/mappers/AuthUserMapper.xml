@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.auth.AuthUserMapper">
+    <resultMap id="authAccount" type="com.resumecraft.auth.AuthAccount">
+        <constructor>
+            <idArg column="id" javaType="java.util.UUID"
+                   typeHandler="com.resumecraft.common.UuidTypeHandler" />
+            <arg column="email" javaType="java.lang.String" />
+            <arg column="nickname" javaType="java.lang.String" />
+            <arg column="password_hash" javaType="java.lang.String" />
+        </constructor>
+    </resultMap>
+    <select id="findByEmail" resultMap="authAccount">
+        SELECT id, email, nickname, password_hash
+        FROM users
+        WHERE email = #{email}
+    </select>
+    <insert id="insert">
+        INSERT INTO users (id, email, nickname, password_hash)
+        VALUES (
+            #{id,typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{email},
+            #{nickname},
+            #{passwordHash}
+        )
+    </insert>
+</mapper>

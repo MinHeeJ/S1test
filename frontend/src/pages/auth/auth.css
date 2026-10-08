@@ -1,0 +1,201 @@
+/* Plain centered auth column, warm neutrals and muted green from the visual contract. */
+.auth-page {
+  --auth-bg: oklch(97.5% 0.005 95);
+  --auth-ink: oklch(22% 0.01 95);
+  --auth-muted: oklch(53% 0.01 95);
+  --auth-accent: oklch(50% 0.1 150);
+  --auth-accent-soft: oklch(94% 0.035 150);
+  --auth-line: oklch(82% 0.008 95);
+  --auth-raised: oklch(100% 0 0);
+  --auth-danger: oklch(48% 0.17 27);
+  background: var(--auth-bg);
+  color: var(--auth-ink);
+  font:
+    14px/20px "Hanken Grotesk",
+    sans-serif;
+  min-height: 100svh;
+}
+.auth-column {
+  box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  min-height: 100svh;
+  width: 100%;
+  max-width: 384px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding-inline: 16px;
+}
+.auth-brand {
+  width: 80px;
+  height: 80px;
+  align-self: center;
+  margin-bottom: 16px;
+  color: var(--auth-accent);
+}
+.auth-brand {
+  view-transition-name: auth-brand;
+}
+.auth-heading {
+  text-align: center;
+}
+.auth-heading h1 {
+  font:
+    600 24px/32px "Newsreader",
+    Georgia,
+    serif;
+  letter-spacing: -0.025em;
+  margin: 0 0 4px;
+}
+.auth-heading p {
+  margin: 0;
+  color: var(--auth-muted);
+}
+.auth-heading a {
+  color: oklch(42% 0.1 150);
+  text-underline-offset: 4px;
+}
+.auth-form {
+  display: grid;
+  gap: 24px;
+}
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+.auth-field label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: oklch(42% 0.01 95);
+}
+.auth-field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid var(--auth-line);
+  border-radius: 8px;
+  background: var(--auth-raised);
+  padding-inline: 12px;
+  color: var(--auth-ink);
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.auth-field input:focus {
+  border-color: var(--auth-accent);
+  box-shadow: 0 0 0 3px var(--auth-accent-soft);
+}
+.auth-field input[aria-invalid="true"] {
+  border-color: var(--auth-danger);
+}
+.auth-field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px oklch(95% 0.03 27);
+}
+.auth-field input:disabled {
+  background: oklch(95.2% 0.006 95);
+  color: var(--auth-muted);
+}
+.auth-password {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.auth-eye {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+.auth-helper,
+.auth-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--auth-muted);
+}
+.auth-error {
+  color: var(--auth-danger);
+}
+.auth-submit {
+  width: 100%;
+  height: 36px;
+  padding-inline: 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: oklch(99% 0.01 150);
+  background: var(--auth-accent);
+  font:
+    600 14px/20px "Hanken Grotesk",
+    sans-serif;
+  transition:
+    background-color 120ms,
+    transform 120ms;
+}
+.auth-submit:hover {
+  background: oklch(44% 0.1 150);
+}
+.auth-submit:active {
+  transform: scale(0.97);
+}
+.auth-submit:disabled {
+  background: oklch(95.2% 0.006 95);
+  color: var(--auth-muted);
+  cursor: progress;
+}
+.auth-page button:focus-visible,
+.auth-page a:focus-visible {
+  outline: 2px solid var(--auth-accent);
+  outline-offset: 2px;
+}
+.auth-toast {
+  position: fixed;
+  bottom: 24px;
+  inset-inline: 16px;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin-inline: auto;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--auth-ink);
+  color: var(--auth-bg);
+}
+html.dark .auth-page {
+  --auth-bg: oklch(17% 0.006 95);
+  --auth-ink: oklch(95% 0.005 95);
+  --auth-muted: oklch(67% 0.008 95);
+  --auth-accent: oklch(74% 0.12 150);
+  --auth-accent-soft: oklch(30% 0.05 150);
+  --auth-line: oklch(40% 0.008 95);
+  --auth-raised: oklch(23.5% 0.007 95);
+  --auth-danger: oklch(80% 0.11 27);
+}
+html.dark .auth-heading a {
+  color: oklch(82% 0.11 150);
+}
+html.dark .auth-field label {
+  color: oklch(79% 0.008 95);
+}
+@media (min-width: 480px) {
+  .auth-column {
+    padding-inline: 0;
+  }
+}
+@media (pointer: coarse) {
+  .auth-field input,
+  .auth-submit,
+  .auth-eye {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-page * {
+    transition-duration: 0.01ms !important;
+  }
+}
