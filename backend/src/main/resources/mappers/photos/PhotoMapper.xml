@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.photos.PhotoMapper">
+    <resultMap id="photoRow" type="com.resumecraft.photos.Photo">
+        <constructor>
+            <idArg column="id" javaType="java.util.UUID"
+                typeHandler="com.resumecraft.common.UuidTypeHandler" />
+            <arg column="user_id" javaType="java.util.UUID"
+                typeHandler="com.resumecraft.common.UuidTypeHandler" />
+            <arg column="content_type" javaType="java.lang.String" />
+            <arg column="data" javaType="_byte[]" jdbcType="BINARY" />
+        </constructor>
+    </resultMap>
+    <insert id="insert">
+        INSERT INTO photo (id, user_id, content_type, data)
+        VALUES (
+            #{id,typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{userId,typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{contentType},
+            #{data,jdbcType=BINARY}
+        )
+    </insert>
+    <select id="findOwned" resultMap="photoRow">
+        SELECT id, user_id, content_type, data
+        FROM photo
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{userId,typeHandler=com.resumecraft.common.UuidTypeHandler}
+    </select>
+</mapper>

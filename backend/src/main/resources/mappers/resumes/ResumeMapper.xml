@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.resumes.ResumeMapper">
+    <resultMap id="resumeDocument" type="com.resumecraft.resumes.ResumeDocument">
+        <constructor>
+            <idArg column="id" javaType="java.util.UUID" typeHandler="com.resumecraft.common.UuidTypeHandler" />
+            <arg column="title" javaType="java.lang.String" />
+            <arg column="template" javaType="java.lang.String" />
+            <arg column="style" javaType="com.fasterxml.jackson.databind.JsonNode"
+                typeHandler="com.resumecraft.common.JsonNodeTypeHandler" />
+            <arg column="content" javaType="com.fasterxml.jackson.databind.JsonNode"
+                typeHandler="com.resumecraft.common.JsonNodeTypeHandler" />
+            <arg column="updated_at" javaType="java.lang.String" />
+        </constructor>
+    </resultMap>
+    <sql id="columns">
+        id, title, template, style, content, updated_at
+    </sql>
+    <select id="list" resultMap="resumeDocument">
+        SELECT <include refid="columns" />
+        FROM resume
+        WHERE user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+        <if test="filter != null">
+            AND POSITION(LOWER(#{filter}) IN LOWER(title)) > 0
+        </if>
+        ORDER BY updated_at DESC, id ASC
+        LIMIT #{limit}
+        OFFSET #{pageOffset}
+    </select>
+    <select id="find" resultMap="resumeDocument">
+        SELECT <include refid="columns" />
+        FROM resume
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler} AND deleted = false
+    </select>
+    <select id="lock" resultMap="resumeDocument">
+        SELECT <include refid="columns" />
+        FROM resume
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler} AND deleted = false
+        FOR UPDATE
+    </select>
+    <insert id="insert">
+        INSERT INTO resume (id, user_id, title, template, style, content)
+        VALUES (
+            #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}, #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}, #{title}, #{template},
+            #{style,typeHandler=com.resumecraft.common.JsonNodeTypeHandler},
+            #{content,typeHandler=com.resumecraft.common.JsonNodeTypeHandler}
+        )
+    </insert>
+    <update id="update">
+        UPDATE resume
+        SET template = #{template},
+            style = #{style,typeHandler=com.resumecraft.common.JsonNodeTypeHandler},
+            content = #{content,typeHandler=com.resumecraft.common.JsonNodeTypeHandler},
+            updated_at = CURRENT_TIMESTAMP
+        <if test="title != null">, title = #{title}</if>
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler} AND deleted = false
+    </update>
+    <update id="rename">
+        UPDATE resume
+        SET title = #{title}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler} AND deleted = false
+    </update>
+    <update id="delete">
+        UPDATE resume
+        SET deleted = true, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler} AND deleted = false
+    </update>
+    <select id="ownsPhoto" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM photo
+            WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler} AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+        )
+    </select>
+</mapper>

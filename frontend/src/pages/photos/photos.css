@@ -1,0 +1,103 @@
+/* Local semantic tokens follow the approved warm-neutral and low-chroma green primitives. */
+.resume-photo-panel {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  color: var(--ink, oklch(22% 0.01 95));
+  font:
+    14px/20px "Hanken Grotesk Variable",
+    system-ui,
+    sans-serif;
+}
+.resume-photo-panel h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.resume-photo-target {
+  width: 96px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--line-2, oklch(82% 0.008 95));
+  border-radius: 8px;
+  background: var(--raised, oklch(100% 0 0));
+  color: inherit;
+  cursor: pointer;
+}
+.resume-photo-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.resume-photo-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+.resume-photo-help {
+  margin: 0;
+  color: var(--ink-3, oklch(53% 0.01 95));
+  font-size: 13px;
+}
+.resume-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resume-photo-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2, oklch(82% 0.008 95));
+  border-radius: 8px;
+  background: var(--surface, oklch(99.5% 0.002 95));
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.resume-photo-panel button {
+  transition:
+    background-color 120ms,
+    color 120ms,
+    scale 120ms;
+}
+.resume-photo-panel button:active {
+  scale: 0.97;
+}
+.resume-photo-panel button:hover {
+  background: var(--sunken, oklch(95.2% 0.006 95));
+}
+.resume-photo-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.resume-photo-panel button:focus-visible {
+  outline: 2px solid var(--accent, oklch(50% 0.1 150));
+  outline-offset: 2px;
+}
+.resume-photo-toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--raised, oklch(100% 0 0));
+  color: var(--danger-text, oklch(48% 0.17 27));
+  border: 1px solid var(--line, oklch(90% 0.006 95));
+}
+@media (pointer: coarse) {
+  .resume-photo-actions button {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-photo-panel button {
+    transition-duration: 0.01ms !important;
+  }
+}
