@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.auth.AuthMapper">
+    <resultMap id="authUser" type="com.example.auth.AuthUser">
+        <id property="id" column="id" typeHandler="com.example.common.persistence.UuidTypeHandler" />
+        <result property="email" column="email" />
+        <result property="nickname" column="nickname" />
+        <result property="passwordHash" column="password_hash" />
+    </resultMap>
+    <select id="findByEmail" resultMap="authUser">
+        SELECT id, email, nickname, password_hash
+        FROM users
+        WHERE email = #{email}
+    </select>
+    <select id="findById" resultMap="authUser">
+        SELECT id, email, nickname, password_hash
+        FROM users
+        WHERE id = #{id, typeHandler=com.example.common.persistence.UuidTypeHandler}
+    </select>
+    <insert id="insert" parameterType="com.example.auth.AuthUser">
+        INSERT INTO users (id, email, nickname, password_hash)
+        VALUES (
+            #{id, typeHandler=com.example.common.persistence.UuidTypeHandler},
+            #{email},
+            #{nickname},
+            #{passwordHash}
+        )
+    </insert>
+</mapper>

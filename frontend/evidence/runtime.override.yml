@@ -1,0 +1,3 @@
+services:
+  backend:
+    image: resumecraft-ui-review-backend:1.0.0

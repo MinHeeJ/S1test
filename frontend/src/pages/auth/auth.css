@@ -1,0 +1,94 @@
+/* Account surfaces share the foundation's exact style-guide tokens, without product sidebars. */
+.auth-layout {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  padding: 1.5rem;
+}
+.auth-card {
+  width: min(100%, 440px);
+  min-width: min(360px, calc(100vw - 3rem));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2xl);
+  background: var(--surface);
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px oklch(20% 0.01 95 / 0.07);
+}
+.auth-brand {
+  font-weight: 600;
+}
+.auth-card h1 {
+  font-size: 1.75rem;
+  margin: 1.5rem 0 0.5rem;
+}
+.auth-description {
+  color: var(--ink-2);
+  margin-bottom: 1.5rem;
+}
+.auth-card fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.auth-card label {
+  margin-top: 0.5rem;
+}
+.auth-card input {
+  background: var(--raised);
+  color: var(--ink);
+  height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+}
+.auth-card button {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 0.625rem 1rem;
+  margin: 1rem 0;
+}
+.auth-card button:hover {
+  background: var(--accent-hover);
+}
+.auth-card button:disabled {
+  opacity: 0.65;
+}
+.auth-card a {
+  color: var(--accent-text);
+}
+.auth-error {
+  color: var(--danger-text);
+  margin: 0;
+  font-size: 0.875rem;
+}
+.auth-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 2rem);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1rem;
+  box-shadow:
+    0 1px 2px oklch(20% 0.01 95 / 0.06),
+    0 10px 28px -8px oklch(20% 0.01 95 / 0.18);
+}
+.auth-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 1rem;
+}
+.auth-header .auth-brand {
+  margin-right: auto;
+}
+@media (pointer: coarse) {
+  .auth-card input {
+    height: 2.75rem;
+  }
+}

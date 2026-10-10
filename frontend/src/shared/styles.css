@@ -1,0 +1,123 @@
+@font-face {
+  font-family: "Hanken Grotesk Variable";
+  src: url("/fonts/hanken-grotesk.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader Variable";
+  src: url("/fonts/newsreader.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+:root {
+  --bg: oklch(97.5% 0.005 95);
+  --surface: oklch(99.5% 0.002 95);
+  --raised: oklch(100% 0 0);
+  --sunken: oklch(95.2% 0.006 95);
+  --line: oklch(90% 0.006 95);
+  --line-2: oklch(82% 0.008 95);
+  --ink: oklch(22% 0.01 95);
+  --ink-2: oklch(42% 0.01 95);
+  --ink-3: oklch(53% 0.01 95);
+  --accent: oklch(50% 0.1 150);
+  --accent-hover: oklch(44% 0.1 150);
+  --on-accent: oklch(99% 0.01 150);
+  --accent-soft: oklch(94% 0.035 150);
+  --accent-text: oklch(42% 0.1 150);
+  --danger: oklch(53% 0.17 27);
+  --danger-soft: oklch(95% 0.03 27);
+  --danger-text: oklch(48% 0.17 27);
+  --warn: oklch(72% 0.14 80);
+  --warn-soft: oklch(95% 0.045 85);
+  --warn-text: oklch(48% 0.1 70);
+  --info-soft: oklch(95% 0.03 250);
+  --info-text: oklch(46% 0.11 250);
+  --hover: oklch(22% 0.01 95 / 0.05);
+  --press: oklch(22% 0.01 95 / 0.09);
+  --scrim: oklch(20% 0.01 95 / 0.32);
+  --scrim-sheet: oklch(20% 0.01 95 / 0.18);
+  --paper: #fff;
+  --spacing: 0.25rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 18px;
+  --font-ui: "Hanken Grotesk Variable", system-ui, sans-serif;
+  --font-display: "Newsreader Variable", Georgia, serif;
+  --d1: 0.12s;
+  --d2: 0.2s;
+  --d3: 0.32s;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 0.875rem var(--font-ui);
+}
+#main-content {
+  min-width: 0;
+}
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button {
+  font: inherit;
+  transition: background-color var(--d1) var(--ease);
+}
+button:not([aria-busy="true"]):active {
+  transform: scale(0.97);
+}
+button:disabled {
+  cursor: not-allowed;
+}
+input,
+textarea,
+select {
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+.skip-link {
+  position: absolute;
+  left: -10000px;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 100;
+  background: var(--raised);
+  padding: 0.5rem 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d1: 1ms;
+    --d2: 1ms;
+    --d3: 1ms;
+  }
+}
