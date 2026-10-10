@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.photos.PhotoMapper">
+    <resultMap id="photo" type="com.example.photos.Photo">
+        <id column="id" property="id" typeHandler="com.example.common.persistence.UuidTypeHandler" />
+        <result column="user_id" property="userId" typeHandler="com.example.common.persistence.UuidTypeHandler" />
+        <result column="content_type" property="contentType" />
+        <result column="data" property="data" jdbcType="BINARY" />
+    </resultMap>
+    <insert id="insert" parameterType="com.example.photos.Photo">
+        INSERT INTO photo (id, user_id, content_type, data)
+        VALUES (
+            #{id,typeHandler=com.example.common.persistence.UuidTypeHandler},
+            #{userId,typeHandler=com.example.common.persistence.UuidTypeHandler},
+            #{contentType},
+            #{data,jdbcType=BINARY}
+        )
+    </insert>
+    <select id="findOwned" resultMap="photo">
+        SELECT id, user_id, content_type, data
+        FROM photo
+        WHERE id = #{id,typeHandler=com.example.common.persistence.UuidTypeHandler}
+            AND user_id = #{userId,typeHandler=com.example.common.persistence.UuidTypeHandler}
+    </select>
+</mapper>
