@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.auth.AuthMapper">
+    <resultMap id="account" type="com.resumecraft.auth.AuthAccount">
+        <constructor>
+            <idArg column="id" javaType="java.util.UUID" typeHandler="com.resumecraft.common.UuidTypeHandler" />
+            <arg column="email" javaType="java.lang.String" />
+            <arg column="nickname" javaType="java.lang.String" />
+            <arg column="password_hash" javaType="java.lang.String" />
+        </constructor>
+    </resultMap>
+    <!-- Account lookup has no business-resource side effects. -->
+    <select id="findByEmail" resultMap="account">
+        SELECT id, email, nickname, password_hash
+        FROM users
+        WHERE email = #{email}
+    </select>
+    <select id="findById" resultMap="account">
+        SELECT id, email, nickname, password_hash
+        FROM users
+        WHERE id = #{id, typeHandler=com.resumecraft.common.UuidTypeHandler}
+    </select>
+    <!-- Server generates the UUID before insert; timestamps retain database defaults. -->
+    <insert id="insert">
+        INSERT INTO users (id, email, nickname, password_hash)
+        VALUES (
+            #{id, typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{email},
+            #{nickname},
+            #{passwordHash}
+        )
+    </insert>
+</mapper>
