@@ -1,0 +1,23 @@
+.photo-input {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.photo-select {
+  width: 96px;
+  height: 128px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--sunken);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+}
+.photo-help {
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 16px;
+}
+.photo-actions {
+  display: flex;
+  gap: 8px;
+}

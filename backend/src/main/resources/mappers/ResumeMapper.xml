@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.resumes.ResumeMapper">
+    <resultMap id="resume" type="com.resumecraft.resumes.ResumeRecord">
+        <constructor>
+            <idArg
+                column="id"
+                javaType="java.util.UUID"
+                typeHandler="com.resumecraft.common.UuidTypeHandler"
+            />
+            <arg column="title" javaType="java.lang.String" />
+            <arg column="template" javaType="java.lang.String" />
+            <arg column="style" javaType="com.fasterxml.jackson.databind.JsonNode"
+                 typeHandler="com.resumecraft.common.JsonbTypeHandler" />
+            <arg column="content" javaType="com.fasterxml.jackson.databind.JsonNode"
+                 typeHandler="com.resumecraft.common.JsonbTypeHandler" />
+            <arg column="updated_at" javaType="java.time.OffsetDateTime" />
+        </constructor>
+    </resultMap>
+    <sql id="columns">
+        id,
+        title,
+        template,
+        style,
+        content,
+        updated_at
+    </sql>
+    <select id="list" resultMap="resume">
+        SELECT <include refid="columns" />
+        FROM resume
+        WHERE user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+        ORDER BY updated_at DESC, id ASC
+    </select>
+    <select id="find" resultMap="resume">
+        SELECT <include refid="columns" />
+        FROM resume
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+    </select>
+    <select id="email" resultType="java.lang.String">
+        SELECT email
+        FROM users
+        WHERE id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+    </select>
+    <select id="ownsPhoto" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM photo
+            WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+                AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+        )
+    </select>
+    <insert id="insert">
+        INSERT INTO resume (id, user_id, title, template, style, content)
+        VALUES (
+            #{id,typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler},
+            #{write.title},
+            #{write.template},
+            #{write.style,typeHandler=com.resumecraft.common.JsonbTypeHandler},
+            #{write.content,typeHandler=com.resumecraft.common.JsonbTypeHandler}
+        )
+    </insert>
+    <update id="save">
+        UPDATE resume
+        SET title = #{write.title},
+            template = #{write.template},
+            style = #{write.style,typeHandler=com.resumecraft.common.JsonbTypeHandler},
+            content = #{write.content,typeHandler=com.resumecraft.common.JsonbTypeHandler},
+            updated_at = clock_timestamp()
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+    </update>
+    <update id="rename">
+        UPDATE resume
+        SET title = #{title},
+            updated_at = clock_timestamp()
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+    </update>
+    <update id="delete">
+        UPDATE resume
+        SET deleted = true,
+            updated_at = clock_timestamp()
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+    </update>
+    <!-- A single conditional INSERT preserves source JSON and reuses its photo reference. -->
+    <select id="duplicate" resultType="java.util.UUID" affectData="true" flushCache="true">
+        INSERT INTO resume (user_id, title, template, style, content)
+        SELECT user_id,
+            title || ' (사본)',
+            template,
+            style,
+            content
+        FROM resume
+        WHERE id = #{id,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND user_id = #{owner,typeHandler=com.resumecraft.common.UuidTypeHandler}
+            AND deleted = false
+        RETURNING id
+    </select>
+</mapper>

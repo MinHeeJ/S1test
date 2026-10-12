@@ -1,0 +1,575 @@
+.list-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+}
+.page-description {
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 12px 0 0;
+  word-break: keep-all;
+}
+.document-count {
+  flex-shrink: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.query-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: var(--danger-soft);
+  border-radius: 12px;
+  color: var(--danger-text);
+  font-size: 14px;
+}
+.empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 16px 0;
+}
+.empty-state p,
+.list-loading p {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin: 0 0 16px;
+  line-height: 1.7;
+}
+.empty-symbol {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: 12px;
+  font-size: 24px;
+}
+.document-skeleton {
+  aspect-ratio: 210 / 297;
+  background: var(--sunken);
+  border-radius: 6px;
+}
+.document-title {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.document-title:hover {
+  text-decoration: underline;
+}
+.card-menu {
+  grid-area: menu;
+  position: relative;
+  justify-self: end;
+  align-self: start;
+}
+.card-metadata {
+  grid-area: metadata;
+}
+.card-menu .menu-trigger {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 22px;
+}
+.card-menu .card-actions {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 180px;
+  padding: 5px;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--raised);
+  box-shadow: var(--shadow-3);
+  animation: modal-enter var(--d2) var(--ease-enter);
+}
+.card-menu .card-actions button {
+  justify-content: flex-start;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  border: 0;
+  background: transparent;
+}
+.card-menu .card-actions button:hover {
+  background: var(--hover);
+}
+.card-menu .card-actions button:last-child {
+  color: var(--danger-text);
+}
+.editor-loading {
+  display: grid;
+  gap: 24px;
+  padding: 32px;
+  color: var(--ink-2);
+}
+.editor-skeleton {
+  height: 65svh;
+  border-radius: 12px;
+  background: var(--sunken);
+}
+.resume-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 204px));
+  gap: 22px 28px;
+}
+.resume-card {
+  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-areas: "preview preview" "metadata menu";
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  align-content: start;
+}
+.resume-card > a {
+  grid-area: preview;
+  display: block;
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-1);
+  transition:
+    translate var(--d1) var(--ease-enter),
+    box-shadow var(--d1);
+}
+.resume-thumbnail {
+  background: #fff;
+  height: 100%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-1);
+  transition: translate var(--d1) var(--ease-enter);
+}
+.resume-card > a:hover {
+  box-shadow: 0 4px 16px oklch(20% 0.01 95 / 0.12);
+  translate: 0 -2px;
+}
+.thumbnail-scale {
+  zoom: 0.257;
+}
+.resume-thumbnail .resume-document {
+  width: 794px;
+}
+.card-metadata {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+}
+.card-metadata strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-metadata time {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.card-actions,
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.card-actions button {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.new-resume {
+  background: transparent;
+  color: var(--accent-text);
+  flex-direction: column;
+  height: auto;
+  aspect-ratio: 210 / 297;
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+}
+.resume-editor {
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.resume-editor > .product-header {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.editor-title {
+  background: transparent;
+  border-color: transparent;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  justify-content: flex-start;
+  min-width: 120px;
+}
+.editor-toolbar > input {
+  width: 220px;
+}
+.save-status {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-text);
+  font-size: 12px;
+}
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(360px, 38%) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+.editor-input {
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  scrollbar-width: thin;
+  overflow-y: auto;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.editor-preview {
+  background: var(--sunken);
+  scrollbar-width: thin;
+  overflow: auto;
+  padding: 16px;
+  min-width: 0;
+}
+.editor-tabs {
+  display: none;
+}
+.section-card {
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--surface);
+}
+.section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.section-heading > button {
+  font-size: 15px;
+  font-weight: 600;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.hidden-section {
+  opacity: 0.55;
+}
+.field-grid {
+  display: grid;
+  gap: 16px;
+}
+.resume-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.resume-item .field-grid {
+  margin: 16px 0;
+}
+.current-control {
+  display: flex;
+  align-items: center;
+}
+.current-control input {
+  width: 18px;
+  height: 18px;
+}
+.links-fields {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.editor-photo {
+  width: 90px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.helper {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag-list button {
+  border-radius: 20px;
+}
+.completeness {
+  height: 48px;
+  display: block;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.completeness > span {
+  height: 4px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+.completion-popover {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.completion-popover p {
+  font-size: 13px;
+}
+.style-panel {
+  display: grid;
+  gap: 16px;
+}
+.preview-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.preview-controls label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 180px;
+}
+.preview-scale {
+  width: 794px;
+  margin: 0 auto;
+}
+.resume-document {
+  color: #111;
+  width: 794px;
+  line-height: 1.5;
+}
+.resume-paper {
+  width: 794px;
+  height: 1123px;
+  background: #fff;
+  box-shadow: 0 2px 12px oklch(20% 0.01 95 / 0.12);
+  margin-bottom: 24px;
+  display: flex;
+}
+.resume-main {
+  width: 100%;
+  padding: 48px;
+  min-width: 0;
+}
+.resume-sidebar {
+  width: 32%;
+  background: var(--resume-color);
+  color: white;
+  padding: 48px 24px;
+}
+.modern .resume-main {
+  width: 68%;
+  padding: 48px 32px;
+}
+.resume-block {
+  display: flow-root;
+  padding-bottom: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.resume-block h2 {
+  color: var(--resume-color);
+  font: inherit;
+  font-weight: 700;
+  border-bottom: 1px solid var(--resume-color);
+  margin: 0 0 12px;
+}
+.resume-block p {
+  margin: 0;
+}
+.resume-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.resume-basics h2 {
+  font-size: 1.7em;
+  border: 0;
+}
+.resume-block img {
+  width: 90px;
+  height: 120px;
+  object-fit: cover;
+  float: right;
+  margin-left: 16px;
+}
+.resume-sidebar .resume-block h2 {
+  color: white;
+  border-color: currentColor;
+}
+.resume-sidebar .resume-block img {
+  float: none;
+  display: block;
+  margin: 0 0 12px;
+}
+.resume-measure {
+  position: fixed;
+  left: -10000px;
+  visibility: hidden;
+  width: 794px;
+}
+.page-count {
+  color: var(--ink-2);
+  text-align: center;
+  font-size: 14px;
+}
+.print-frame {
+  position: fixed;
+  left: -10000px;
+  width: 794px;
+  height: 1123px;
+  border: 0;
+}
+.editor-error {
+  padding: 32px;
+}
+@media (max-width: 1023px) {
+  .editor-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 16px;
+    background: var(--surface);
+  }
+  .editor-tabs [aria-selected="true"] {
+    background: var(--sunken);
+  }
+  .editor-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .active-input .editor-preview,
+  .active-preview .editor-input {
+    display: none;
+  }
+  .editor-toolbar {
+    padding: 12px 16px;
+  }
+}
+@media (max-width: 639px) {
+  .list-heading {
+    align-items: start;
+    gap: 12px;
+  }
+  .document-count {
+    padding-top: 30px;
+  }
+  .preview-controls {
+    gap: 8px;
+    padding: 12px;
+  }
+  .preview-controls label {
+    width: 160px;
+  }
+  .resume-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .editor-input {
+    padding: 16px;
+  }
+  .editor-toolbar button {
+    font-size: 12px;
+  }
+}
+@page {
+  size: A4;
+  margin: 0;
+}
+@media print {
+  html,
+  body {
+    margin: 0;
+    background: white;
+  }
+  .toast,
+  .print-guide {
+    display: none !important;
+  }
+  .resume-paper {
+    box-shadow: none;
+    margin: 0;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .resume-paper:last-of-type {
+    break-after: auto;
+  }
+  .resume-block {
+    break-inside: avoid;
+  }
+  .resume-measure,
+  .page-count,
+  .print-guide {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-card > a {
+    transition: none;
+  }
+}

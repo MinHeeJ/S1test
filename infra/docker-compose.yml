@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME:-resumecraft}
+      POSTGRES_USER: ${DB_USER:-resumecraft}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-only-password}
+    volumes:
+      - resume-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  backend:
+    image: resumecraft-backend:1.0.0
+    build:
+      context: ../backend
+    pull_policy: build
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-resumecraft}
+      DB_USER: ${DB_USER:-resumecraft}
+      DB_PASSWORD: ${DB_PASSWORD:-dev-only-password}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 20
+  frontend:
+    image: resumecraft-frontend:1.0.0
+    build:
+      context: ../frontend
+    pull_policy: build
+    ports:
+      - "127.0.0.1:3000:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+volumes:
+  resume-data:
