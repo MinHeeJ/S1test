@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.common.persistence.ResumeMapper">
+    <resultMap id="row" type="com.resumecraft.common.persistence.ResumeRow">
+        <constructor>
+            <arg column="id" javaType="java.lang.Long"/>
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="template" javaType="java.lang.String"/>
+            <arg
+                column="style"
+                javaType="com.fasterxml.jackson.databind.JsonNode"
+                typeHandler="com.resumecraft.common.persistence.JsonbTypeHandler"
+            />
+            <arg
+                column="content"
+                javaType="com.fasterxml.jackson.databind.JsonNode"
+                typeHandler="com.resumecraft.common.persistence.JsonbTypeHandler"
+            />
+            <arg column="deleted" javaType="_boolean"/>
+            <arg column="created_at" javaType="java.time.OffsetDateTime"/>
+            <arg column="updated_at" javaType="java.time.OffsetDateTime"/>
+        </constructor>
+    </resultMap>
+    <select id="listOwned" resultMap="row">
+        SELECT
+            id,
+            user_id,
+            title,
+            template,
+            style,
+            content,
+            deleted,
+            created_at,
+            updated_at
+        FROM resume
+        WHERE user_id = #{userId}
+            AND deleted = FALSE
+        ORDER BY updated_at DESC, id DESC
+    </select>
+    <sql id="ownedFilter">
+        WHERE user_id = #{userId}
+            AND deleted = FALSE
+        <if test="filter != null and filter != ''">
+            AND POSITION(#{filter} IN title) &gt; 0
+        </if>
+    </sql>
+    <select id="listPage" resultMap="row">
+        SELECT
+            id,
+            user_id,
+            title,
+            template,
+            style,
+            content,
+            deleted,
+            created_at,
+            updated_at
+        FROM resume
+        <include refid="ownedFilter"/>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT #{pageLimit}
+        OFFSET #{pageOffset}
+    </select>
+    <select id="countOwned" resultType="long">
+        SELECT COUNT(*)
+        FROM resume
+        <include refid="ownedFilter"/>
+    </select>
+    <select id="findOwned" resultMap="row">
+        SELECT
+            id,
+            user_id,
+            title,
+            template,
+            style,
+            content,
+            deleted,
+            created_at,
+            updated_at
+        FROM resume
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND deleted = FALSE
+    </select>
+    <select id="insert" resultType="java.lang.Long" affectData="true" flushCache="true">
+        INSERT INTO resume (user_id, title, template, style, content)
+        VALUES (
+            #{userId},
+            #{title},
+            #{template},
+            #{style,typeHandler=com.resumecraft.common.persistence.JsonbTypeHandler},
+            #{content,typeHandler=com.resumecraft.common.persistence.JsonbTypeHandler}
+        )
+        RETURNING id
+    </select>
+    <update id="updateOwned">
+        UPDATE resume
+        SET template = #{template},
+            style = #{style,typeHandler=com.resumecraft.common.persistence.JsonbTypeHandler},
+            content = #{content,typeHandler=com.resumecraft.common.persistence.JsonbTypeHandler},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND deleted = FALSE
+    </update>
+    <update id="renameOwned">
+        UPDATE resume
+        SET title = #{title},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND deleted = FALSE
+    </update>
+    <update id="deleteOwned">
+        UPDATE resume
+        SET deleted = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND deleted = FALSE
+    </update>
+</mapper>

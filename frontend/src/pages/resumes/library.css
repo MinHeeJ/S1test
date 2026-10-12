@@ -1,0 +1,236 @@
+.resume-app .library-page {
+  width: 100%;
+  padding-top: 44px;
+  gap: 24px;
+}
+.library-header {
+  display: grid;
+  gap: 10px;
+}
+.library-header h1 {
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+}
+.library-header p {
+  color: var(--ink-2);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.library-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.library-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: -1px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.resume-app .library-page .resume-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 16px;
+  align-items: start;
+}
+.resume-app .create-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-weight: 500;
+  padding: 16px 8px;
+  width: 100%;
+  transition:
+    background-color var(--d2) var(--ease),
+    border-color var(--d2) var(--ease);
+}
+.resume-app .create-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.create-symbol {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--raised);
+}
+.create-helper {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-3);
+  line-height: 1.6;
+  text-align: center;
+}
+.resume-app .thumbnail-link {
+  transition:
+    transform var(--d2) var(--ease),
+    box-shadow var(--d2) var(--ease);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 2px oklch(20% 0.01 95 / 0.07);
+}
+.resume-app .thumbnail-link:active {
+  transform: scale(0.98);
+}
+.resume-app .card-metadata a {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.resume-app .card-metadata time {
+  display: block;
+  line-height: 20px;
+}
+.resume-app .card-menu-trigger {
+  border: 0;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 22px;
+}
+.resume-app .resume-menu {
+  min-width: 220px;
+  border: 1px solid var(--line);
+  animation: resume-enter var(--d2) var(--ease);
+}
+.resume-app .resume-menu button {
+  justify-content: flex-start;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  min-height: 36px;
+  padding: 8px 10px;
+}
+.resume-app .resume-menu button:hover {
+  background: var(--hover);
+}
+.resume-app .resume-menu .danger {
+  color: var(--danger-text);
+}
+.resume-app .pagination {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 20px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.library-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 12px 0;
+  max-width: 560px;
+}
+.empty-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.library-empty h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.library-empty p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.skeleton-card {
+  display: grid;
+  gap: 12px;
+}
+.skeleton-paper {
+  aspect-ratio: 210 / 297;
+  border-radius: 6px;
+  background: var(--sunken);
+}
+.skeleton-label {
+  height: 14px;
+  width: 75%;
+  border-radius: 6px;
+  background: var(--sunken);
+}
+.resume-app .resume-dialog h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+}
+.resume-app .resume-dialog p {
+  line-height: 1.7;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.resume-app .template-options {
+  padding: 0;
+  margin: 0;
+  gap: 12px;
+}
+.template-options legend {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.resume-app .template-option {
+  flex: 1;
+  padding: 16px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color var(--d1) var(--ease),
+    background-color var(--d1) var(--ease);
+}
+.resume-app .template-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.resume-app .resume-toast {
+  max-width: calc(100vw - 32px);
+  width: max-content;
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: 0 10px 28px -8px oklch(20% 0.01 95 / 0.18);
+}
+@media (min-width: 640px) {
+  .resume-app .library-page .resume-grid {
+    grid-template-columns: repeat(3, minmax(0, 204px));
+    gap: 22px 28px;
+  }
+}
+@media (min-width: 1024px) {
+  .resume-app .library-page .resume-grid {
+    grid-template-columns: repeat(4, minmax(0, 204px));
+  }
+}
+@media (max-width: 639px) {
+  .resume-app .library-page {
+    padding: 24px 16px;
+    gap: 20px;
+  }
+  .create-helper {
+    font-size: 10px;
+  }
+}
