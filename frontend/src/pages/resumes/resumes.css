@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap');
+.resume-library-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
+.resume-navigation {
+  position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column;
+  gap: 12px; border-inline-end: 1px solid var(--line); background: var(--surface); padding: 12px;
+}
+.resume-navigation a { background: var(--sunken); padding: 9px 10px; border-radius: 10px; }
+.resume-library { max-width: 1180px; width: 100%; margin: 0 auto; padding: 32px; display: grid; gap: 20px; }
+.resume-library h1 { margin: 0; }
+.resume-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 204px)); gap: 22px 28px; }
+.resume-card { min-width: 0; position: relative; display: grid; align-content: start; gap: 8px; }
+.resume-thumbnail {
+  display: block; aspect-ratio: 210 / 297; overflow: hidden; border-radius: 6px; background: white;
+  box-shadow: 0 0 0 1px var(--line), 0 1px 2px oklch(20% .01 95 / .07);
+  transition: scale var(--d1) var(--ease);
+}
+.resume-thumbnail:active { scale: .98; }
+.thumbnail { zoom: .25; }
+.thumbnail .paper-measure { zoom: 1; }
+.card-caption { display: flex; gap: 8px; align-items: center; }
+.card-caption a { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 1; color: var(--ink); }
+.card-caption button { border: none; padding: 0 8px; }
+.resume-card time { color: var(--ink-3); font-size: 12px; }
+.card-menu { position: absolute; z-index: 2; top: 80%; background: var(--raised); padding: 4px; border-radius: 12px; }
+.card-menu button { display: block; width: 100%; }
+.new-resume-card { border: 1px dashed var(--line-2); aspect-ratio: 210 / 297; background: transparent; }
+.empty-state { text-align: center; padding: 80px 16px; }
+.resume-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.resume-toolbar input { width: auto; }
+.resume-workspace { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 80svh; }
+.input-panel { padding: 20px; border-inline-end: 1px solid var(--line); overflow: auto; }
+.section-card, .completion-card {
+  border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: var(--surface); margin-bottom: 16px;
+}
+.section-heading { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.section-heading button { font-size: 13px; padding-inline: 8px; }
+.section-fields { display: grid; gap: 16px; }
+.section-fields label, dialog label, .rename-form label { display: grid; gap: 6px; }
+.section-fields textarea { min-height: 88px; padding: 12px 14px; line-height: 22px; }
+.checkbox-field { display: flex !important; align-items: center; }
+.checkbox-field input { width: auto; }
+.field-warning { color: var(--danger-text); }
+.hidden-section { opacity: .55; }
+.resume-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.resume-item > button { font-size: 12px; }
+.drag-handle { touch-action: none; padding-inline: 8px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.photo-input { width: 90px; height: 120px; object-fit: cover; }
+.completion-track { height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; margin-top: 12px; }
+.completion-track span { display: block; height: 100%; transition: width var(--d2) var(--ease); }
+.preview-panel { background: var(--sunken); padding: 24px 28px; min-width: 0; overflow: auto; }
+.zoom-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.zoom-controls select { width: auto; }
+.paper-viewport { width: fit-content; margin: auto; }
+.editor-tabs { display: none; }
+.resume-renderer { color: #111; line-height: 1.5; }
+.resume-paper { width: 794px; height: 1123px; background: white; margin: 0 0 20px; display: flex; }
+.paper-column { width: 100%; padding: 48px; min-width: 0; }
+.classic .column-1 { display: none; }
+.modern .column-0 { width: 32%; background: var(--resume-color); color: white; padding: 48px 24px; }
+.modern .column-1 { width: 68%; padding: 48px 32px; }
+.paper-basics { display: flex; flex-direction: row-reverse; gap: 24px; margin-bottom: 20px; }
+.paper-basics > div { flex: 1; min-width: 0; }
+.paper-basics img { width: 90px; height: 120px; object-fit: cover; aspect-ratio: 3 / 4; }
+.modern .paper-basics { flex-direction: column; }
+.paper-basics h1 { font-family: inherit; font-size: 2em; margin: 0 0 8px; }
+.paper-basics p { margin: 4px 0; overflow-wrap: anywhere; }
+.paper-section-title { font-weight: bold; line-height: 1.5; font-family: inherit; color: var(--resume-color); }
+.paper-section-title { font-size: 1.25em; border-bottom: 1px solid var(--resume-color); margin: 12px 0 8px; }
+.modern .column-0 .paper-section-title { color: white; border-color: white; }
+.paper-text { margin: 0; padding-bottom: 8px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.paper-bullet { margin: 0; padding: 0 0 8px 18px; overflow-wrap: anywhere; }
+.paper-block { break-inside: avoid; display: flow-root; }
+.paper-measure { position: fixed; left: -10000px; top: 0; visibility: hidden; width: 794px; }
+.measure-block { width: 698px; display: flow-root; }
+.paper-measure.modern .side { width: 206px; }
+.paper-measure.modern .main { width: 476px; }
+.page-count { font: 13px system-ui; color: var(--ink-2); }
+@media (max-width: 1279px) { .resume-workspace { grid-template-columns: 260px minmax(0, 1fr); } }
+@media (max-width: 1023px) {
+  .resume-library-shell { grid-template-columns: 64px minmax(0, 1fr); }
+  .resume-navigation span { display: none; }
+  .resume-workspace { display: block; }
+  .editor-tabs { display: flex; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  .tab-input .preview-panel, .tab-preview .input-panel { display: none; }
+}
+@media (max-width: 639px) {
+  .resume-library-shell { display: block; }
+  .resume-navigation { height: auto; position: sticky; bottom: 0; flex-direction: row; }
+  .resume-library { padding: 20px 16px; }
+  .resume-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .thumbnail { zoom: .20; }
+}
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { margin: 0; background: white; }
+  .paper-measure, .page-count { display: none; }
+  .resume-paper { margin: 0; break-after: page; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .resume-paper:last-child { break-after: auto; }
+}
