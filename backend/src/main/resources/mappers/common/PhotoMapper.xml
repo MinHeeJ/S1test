@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.common.persistence.PhotoMapper">
+    <resultMap id="row" type="com.resumecraft.common.persistence.PhotoRow">
+        <constructor>
+            <arg
+                column="id"
+                javaType="java.util.UUID"
+                typeHandler="com.resumecraft.common.persistence.UuidTypeHandler"
+            />
+            <arg column="user_id" javaType="java.lang.Long"/>
+            <arg column="content_type" javaType="java.lang.String"/>
+            <arg column="data" javaType="_byte[]"/>
+            <arg column="created_at" javaType="java.time.OffsetDateTime"/>
+        </constructor>
+    </resultMap>
+    <select id="findOwned" resultMap="row">
+        SELECT
+            id,
+            user_id,
+            content_type,
+            data,
+            created_at
+        FROM photo
+        WHERE id = #{id,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler}
+            AND user_id = #{userId}
+    </select>
+    <insert id="insert">
+        INSERT INTO photo (id, user_id, content_type, data)
+        VALUES (
+            #{id,typeHandler=com.resumecraft.common.persistence.UuidTypeHandler},
+            #{userId},
+            #{contentType},
+            #{data,jdbcType=BINARY}
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,406 @@
+.resume-app .app-header {
+  padding: 12px 28px;
+  gap: 14px;
+  min-height: 64px;
+}
+.resume-app .logout-button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+}
+.resume-app .editor-toolbar {
+  padding: 16px 24px;
+  gap: 12px;
+}
+.resume-app .title-button {
+  background: transparent;
+  border-color: transparent;
+  justify-content: flex-start;
+  font-size: 22px;
+  min-width: 0;
+  max-width: 35%;
+  overflow-wrap: anywhere;
+}
+.title-actions {
+  display: flex;
+  gap: 6px;
+}
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.save-dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.save-status[data-state="변경됨"] .save-dot,
+.save-status[data-state="저장 중…"] .save-dot {
+  background: var(--warn);
+}
+.resume-app .style-toggle[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.resume-app .editor-tabs {
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.resume-app .editor-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-3);
+}
+.resume-app .editor-tabs button[aria-selected="true"] {
+  color: var(--accent-text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.resume-app .editor-input-panel {
+  gap: 20px;
+  background: var(--bg);
+}
+.resume-app .editor-preview-panel {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 14px;
+  padding: 24px 28px;
+}
+.preview-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.resume-app .resume-preview {
+  min-width: 0;
+  width: 100%;
+  max-width: 850px;
+  margin-inline: auto;
+}
+.resume-app .preview-controls {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.resume-app .preview-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.preview-controls input[type="range"] {
+  width: 100px;
+  padding: 0;
+  box-shadow: none;
+}
+.resume-app .preview-controls > span:last-child {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+}
+.resume-app .preview-space .resume-paper {
+  box-shadow:
+    0 1px 2px oklch(20% 0.01 95 / 0.06),
+    0 10px 28px -8px oklch(20% 0.01 95 / 0.18);
+}
+.resume-app .section-card {
+  padding: 18px;
+  gap: 16px;
+}
+.section-body {
+  display: grid;
+  gap: 14px;
+  animation: field-enter var(--d1) var(--ease);
+}
+.resume-app .section-header {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.resume-app .section-header h2 {
+  font-family: "Hanken Grotesk Variable", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+}
+.resume-app .section-toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-weight: inherit;
+  font-size: inherit;
+  text-align: left;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.section-toggle svg {
+  transition: transform var(--d2) var(--ease);
+}
+.section-toggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+.resume-app .section-header > button {
+  font-size: 11px;
+  padding: 4px 6px;
+  min-height: 30px;
+  gap: 4px;
+}
+.resume-app .section-header .secondary {
+  border-color: transparent;
+  color: var(--ink-3);
+  background: transparent;
+}
+.section-header .meta {
+  font-family: ui-monospace, monospace;
+}
+.section-empty {
+  margin: 0;
+  padding: 16px 12px;
+  text-align: center;
+  background: var(--bg);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.resume-app .sortable-wrapper {
+  position: relative;
+  min-width: 0;
+}
+.resume-app .sortable-wrapper > .drag-handle {
+  position: absolute;
+  top: 21px;
+  left: 6px;
+  z-index: 2;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-3);
+  padding: 0;
+  width: 24px;
+  min-height: 28px;
+  cursor: grab;
+}
+.resume-app .sortable-wrapper > .section-card > .section-header {
+  padding-left: 16px;
+}
+.resume-app .sortable-wrapper > .resume-item {
+  padding: 12px 0 0;
+}
+.resume-app .resume-item > button:first-child {
+  padding-left: 32px;
+  justify-content: flex-start;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.resume-app .resume-item > button:not(:first-child) {
+  justify-self: start;
+  min-height: 30px;
+  padding: 4px 8px;
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.resume-app .resume-inputs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+}
+.resume-inputs .field-wide {
+  grid-column: 1 / -1;
+}
+.resume-app .field label {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.resume-app .field input,
+.resume-app .field select {
+  width: 100%;
+  min-height: 36px;
+}
+.resume-app .field input[type="checkbox"] {
+  width: 16px;
+  min-height: 16px;
+}
+.resume-app .field textarea {
+  width: 100%;
+  padding: 12px;
+  line-height: 22px;
+}
+.resume-app .photo-control {
+  padding: 14px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.photo-control input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  font-size: 12px;
+}
+.resume-app .link-fields {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.resume-app .completeness {
+  width: 100%;
+  justify-content: stretch;
+  justify-items: stretch;
+  border-color: var(--line);
+  padding: 16px;
+  font-size: 13px;
+}
+.resume-app .completeness:hover {
+  background: var(--surface);
+  border-color: var(--line-2);
+}
+.completeness-track > span {
+  transition: width var(--d2) var(--ease);
+}
+.resume-app .style-panel {
+  gap: 22px;
+}
+.panel-intro h2 {
+  margin: 8px 0;
+  font-size: 24px;
+}
+.color-options {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.color-options legend {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.resume-app .color-swatch {
+  border: 3px solid var(--raised);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: white;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.resume-app .color-swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.workspace-state {
+  min-height: calc(100svh - 64px);
+  align-content: center;
+}
+.workspace-error {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 32px;
+  text-align: center;
+}
+.workspace-error h1 {
+  font-size: 26px;
+}
+.workspace-error p {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.workspace-loading {
+  width: min(70vw, 500px);
+  margin: auto;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+@keyframes field-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 1024px) {
+  .resume-app .editor-split {
+    grid-template-columns: minmax(400px, 40%) minmax(0, 60%);
+    align-items: start;
+  }
+  .resume-app .editor-input-panel {
+    height: calc(100svh - 134px);
+    overflow-y: auto;
+    border-right: 1px solid var(--line);
+  }
+  .resume-app .editor-preview-panel {
+    position: sticky;
+    top: 0;
+    height: calc(100svh - 134px);
+  }
+}
+@media (max-width: 639px) {
+  .resume-app .app-header {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .user-avatar {
+    display: none;
+  }
+  .resume-app .logout-button {
+    font-size: 12px;
+    padding: 6px;
+  }
+  .resume-app .editor-toolbar {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .resume-app .title-button {
+    flex: 1;
+    max-width: calc(100% - 100px);
+    font-size: 19px;
+  }
+  .save-status {
+    width: 100%;
+  }
+  .resume-app .editor-input-panel,
+  .resume-app .editor-preview-panel {
+    padding: 16px;
+  }
+  .resume-app .section-card {
+    padding: 14px;
+  }
+  .resume-app .section-header {
+    flex-wrap: wrap;
+  }
+  .resume-app .section-header h2 {
+    flex-basis: 40%;
+  }
+  .resume-app .resume-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .resume-app .sortable-wrapper > .drag-handle {
+    top: 17px;
+    left: 3px;
+  }
+}
