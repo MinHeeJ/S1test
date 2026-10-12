@@ -1,0 +1,85 @@
+.auth-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+}
+.auth-content {
+  width: 100%;
+  max-width: 352px;
+  display: grid;
+  gap: 48px;
+}
+.auth-content .product-header {
+  justify-content: center;
+}
+.auth-content .brand {
+  font-size: 20px;
+  letter-spacing: -0.8px;
+}
+.auth-panel {
+  display: grid;
+  gap: 28px;
+}
+.auth-heading {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+.auth-heading h1 {
+  font-size: 26px;
+  line-height: 34px;
+}
+.auth-panel p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--danger-text);
+}
+.auth-panel .auth-description {
+  color: var(--ink-3);
+  word-break: keep-all;
+}
+.auth-panel form {
+  gap: 24px;
+}
+.auth-field {
+  display: grid;
+  gap: 8px;
+}
+.auth-field label {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.auth-panel a {
+  justify-self: center;
+  font-size: 13px;
+  text-decoration: none;
+}
+.auth-panel a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.auth-panel input,
+.auth-panel button {
+  border-radius: 8px;
+}
+.auth-panel button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.auth-panel button.primary:hover {
+  background: var(--accent-hover);
+}
+.auth-panel button.primary:disabled {
+  background: var(--sunken);
+  color: var(--ink-3);
+}
+@media (max-width: 639px) {
+  .auth-page {
+    padding: 32px 24px;
+  }
+  .auth-content {
+    gap: 32px;
+  }
+}
