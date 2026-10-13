@@ -1,0 +1,275 @@
+/* Workspace chrome stays separate from the printed ResumeRenderer. */
+.library-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.document-count {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.library-empty {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-block: 12px 4px;
+}
+.library-empty h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+.library-empty p {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.7;
+}
+.empty-mark,
+.create-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 26px;
+}
+.library-loading > p {
+  margin: 0 0 20px;
+}
+.skeleton-paper {
+  aspect-ratio: 210 / 297;
+  border-radius: 6px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+}
+.skeleton-line {
+  background: var(--sunken);
+  height: 14px;
+  width: 75%;
+  border-radius: 6px;
+}
+.skeleton-line.short {
+  width: 45%;
+  height: 10px;
+}
+.editor-loading {
+  padding: 24px;
+  height: 100%;
+  overflow: hidden;
+}
+.editor-loading > p {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.editor-loading-layout {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 540px);
+  gap: 48px;
+}
+.loading-fields {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+.skeleton-field {
+  height: 90px;
+  border-radius: 12px;
+  background: var(--sunken);
+}
+.save-indicator {
+  font-size: 11px;
+  border: 0;
+  white-space: nowrap;
+}
+.save-indicator:disabled {
+  background: transparent;
+  color: var(--ink-3);
+}
+.save-indicator[data-state="저장됨"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.save-indicator[data-state="저장 실패·다시 시도"] {
+  color: var(--danger-text);
+  background: var(--danger-soft);
+}
+.mode-switch {
+  border-color: transparent;
+  font-weight: 500;
+}
+.mode-switch[aria-pressed="true"] {
+  background: var(--sunken);
+  box-shadow: var(--shadow-1);
+}
+.completeness {
+  text-align: left;
+  justify-items: start;
+  gap: 10px;
+  border-color: var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.section-card:focus-within {
+  border-color: var(--accent);
+}
+.section-card {
+  transition: border-color var(--d1) var(--ease);
+}
+.section-row {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.section-row strong {
+  font-size: 13px;
+}
+.section-row button {
+  border-color: transparent;
+  color: var(--ink-2);
+}
+.entry-card {
+  background: var(--bg);
+}
+.add-entry:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.style-panel label {
+  display: grid;
+  gap: 8px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.style-panel h2 {
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.style-panel > p {
+  margin: 0;
+}
+.preview-controls {
+  position: sticky;
+  top: -12px;
+  z-index: 5;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px 12px;
+  box-shadow: var(--shadow-1);
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.preview-controls input {
+  max-width: 120px;
+}
+.preview-controls button {
+  font-size: 12px;
+  min-height: 28px;
+  border-color: transparent;
+  padding: 0 8px;
+}
+.preview-controls > span:last-child {
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--line);
+}
+.card-metadata form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.card-metadata form label {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+}
+.card-metadata form button {
+  font-size: 12px;
+  min-height: 30px;
+  padding-inline: 10px;
+}
+.card-menu button:nth-child(3) {
+  color: var(--danger-text);
+}
+.card-menu button:nth-child(3):hover {
+  background: var(--danger-soft);
+}
+.modal label {
+  display: grid;
+  gap: 8px;
+}
+@media (max-width: 1023px) {
+  .editor-loading-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .editor-loading-layout > .skeleton-paper {
+    display: none;
+  }
+  .preview-panel {
+    padding: 16px 24px;
+  }
+  .preview-controls {
+    top: 0;
+  }
+}
+@media (max-width: 639px) {
+  .library-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .library-empty {
+    align-items: start;
+  }
+  .library-empty h2 {
+    font-size: 20px;
+  }
+  .empty-mark {
+    flex-shrink: 0;
+  }
+  .resume-toolbar .toolbar-identity {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .toolbar-identity > button:nth-child(2) {
+    flex: 1;
+    text-align: left;
+    justify-content: start;
+  }
+  .resume-toolbar .save-indicator {
+    font-size: 10px;
+  }
+  .resume-toolbar > .primary {
+    margin-inline-start: auto;
+  }
+  .new-resume {
+    padding: 12px;
+  }
+  .create-help {
+    font-size: 10px;
+  }
+  .preview-controls {
+    gap: 8px;
+    padding-inline: 8px;
+  }
+  .preview-controls input {
+    max-width: 80px;
+  }
+}

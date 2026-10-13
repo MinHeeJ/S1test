@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME:-resumecraft}
+      POSTGRES_USER: ${DB_USER:-resumecraft}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+    entrypoint: ["sh", "/opt/resumecraft/database-start.sh"]
+    volumes:
+      - database:/var/lib/postgresql/data
+      - database-secret:/run/database-secret
+      - ./database-start.sh:/opt/resumecraft/database-start.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  backend:
+    image: resumecraft-backend:1.0.0
+    build:
+      context: ../backend
+    pull_policy: build
+    ports:
+      - "${BACKEND_PORT:-8081}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-resumecraft}
+      DB_USER: ${DB_USER:-resumecraft}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+    volumes:
+      - database-secret:/run/database-secret:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 6s
+      start_period: 60s
+      retries: 20
+  frontend:
+    image: resumecraft-frontend:1.0.0
+    build:
+      context: ../frontend
+    pull_policy: build
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/api/health >/dev/null"]
+      interval: 10s
+      timeout: 6s
+      retries: 20
+volumes:
+  database:
+  database-secret:

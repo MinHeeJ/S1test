@@ -1,0 +1,3274 @@
+openapi: 3.1.0
+info:
+  title: ResumeCraft HTTP API 계약
+  version: 0.1.0
+  description: spec.md와 requirement-registry.json의 title·statement·acceptance_hint·source_locator만을 근거로 재생성한 ResumeCraft
+    API 설계 계약이다. 기존 path/METHOD/operationId를 보존한다. 실제 동작·클라이언트 계약·실행 제약은 operation별로 구분하며 참조 추가가 정책 승인이나 실행 성공을
+    뜻하지 않는다. 미정 성공 wire 표현·보안·pagination·영속성 정책은 확인 필요이다.
+paths:
+  /api/auth/signup:
+    post:
+      operationId: signup
+      summary: 회원가입
+      x-related-requirements:
+      - REQ-001
+      - REQ-003
+      - REQ-035
+      - REQ-036
+      - REQ-050
+      - REQ-051
+      - REQ-085
+      - REQ-114
+      - REQ-115
+      security: []
+      responses:
+        '204':
+          description: '성공: 회원가입; 본문 없는 응답의 설계 제안'
+        '400':
+          description: 가입 email 형식·nickname 2~12자·password 8자 이상 입력 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: 'DUPLICATE_EMAIL: 이미 가입된 이메일입니다'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      x-no-response-data-reason: 원문은 신규 응답 데이터가 아니라 자동 로그인·화면 이동을 약속한다. 204와 응답 생략은 OQ-012 확인 전 미승인 제안이다.
+      x-business-rules:
+      - 가입 email은 원문 이메일 정규식에 맞아야 한다. nickname은 2~12자, password는 8자 이상이다(REQ-051).
+      - 비밀번호 확인 일치를 검사하고 가입 성공 뒤 자동 로그인하여 /resumes로 이동한다(REQ-050). 확인값 서버 전송은 OQ-004.
+      - users.email은 unique이며 중복은 409 DUPLICATE_EMAIL, 이미 가입된 이메일입니다로 거부한다(REQ-051).
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      x-side-effects:
+      - users에 새 계정을 저장하고 password_hash를 BCrypt로 보관한다(REQ-035, REQ-050).
+      - 가입 성공 시 인증 세션을 시작하며 같은 세션으로 본인 이력서 목록에 접근한다(REQ-050).
+      x-required-tests:
+      - 'happy: 유효한 신규 email·nickname·8자 이상 password·확인 일치로 가입 -> users에 email 행이 있고 같은 세션 GET /api/resumes 성공 후
+        /resumes로 이동한다'
+      - 'auth: 비로그인에서 유효 가입 요청 -> 인증 때문에 401로 거부되지 않고 가입 뒤 GET /api/auth/me의 nickname이 가입값이다; 가입 자체는 공개 API이다'
+      - 'validation: email=abc@ 또는 nickname 한 글자 또는 password 7자로 가입 -> 400의 field가 해당 입력을 가리키며 users에 새 행이 없다'
+      - 'business: jiwoo@resume.dev로 재가입 -> 409 DUPLICATE_EMAIL·이미 가입된 이메일입니다와 users 동일 email 행수 불변'
+      - 'side-effect: 신규 가입 성공 -> users.password_hash가 입력 평문과 다르고 BCrypt 검증 성공, 후속 보호 API 호출이 같은 세션으로 허용된다'
+      x-state-transitions:
+      - 비로그인 -> 가입 성공 후 로그인 세션
+      x-open-questions:
+      - 'OQ-004: 확인값의 wire 이름·서버 검사 위치·cookie/CSRF'
+      - 'OQ-009: 오류 envelope 정합성'
+      - 'OQ-012: 성공 상태·본문 생략 승인'
+      x-contract-status: clarification_required
+      description: 가입 입력 검증·users 저장·자동 로그인 세션을 제공한다. /signup과 가입 뒤 /resumes 이동 및 헤더는 클라이언트 책임이다. 역할·소셜 로그인은 제외
+        범위이며 추가하지 않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: &id001
+          document: SPEC-REQUEST.md
+          line: 22
+          quote: '- 역할·권한 없음. 로그인 사용자는 모든 기능을 쓴다. 비로그인은 로그인·회원가입 화면만 본다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: &id002
+          document: SPEC-REQUEST.md
+          line: 26
+          quote: '- 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소'
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-035
+        title: 비밀번호 BCrypt
+        statement: 비밀번호 BCrypt
+        acceptance_hint: users.password_hash BCrypt이며 평문 없음
+        source_locator: &id003
+          document: SPEC-REQUEST.md
+          line: 61
+          quote: '- 미리보기는 서버를 거치지 않는다. 비밀번호 BCrypt.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: &id004
+          document: SPEC-REQUEST.md
+          line: 108
+          quote: '- /login, /signup, /resumes(첫 화면, / 는 여기로), /resumes/:id/edit, /print/:id(iframe 전용)'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-050
+        title: 회원가입
+        statement: 가입 성공 자동 로그인 후 /resumes
+        acceptance_hint: FR-101 AC-01 가입 세션·목록, AC-02 중복409 이미 가입된 이메일입니다; api_endpoint:POST /api/auth/signup
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 142
+          quote: '- 로그인: 이메일·비밀번호. 가입: 이메일(서버도 형식 검사), 닉네임 2~12자, 비밀번호 8자 이상, 비밀번호 확인. 가입 성공 시 자동 로그인 후 /resumes.
+            로그아웃 시 /login.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-051
+        title: 가입 검증
+        statement: 이메일 서버 형식, 닉네임2~12자, 비밀번호8자 이상·확인
+        acceptance_hint: 잘못된 이메일·길이400 및 중복409; api_endpoint:POST /api/auth/signup
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 142
+          quote: '- 로그인: 이메일·비밀번호. 가입: 이메일(서버도 형식 검사), 닉네임 2~12자, 비밀번호 8자 이상, 비밀번호 확인. 가입 성공 시 자동 로그인 후 /resumes.
+            로그아웃 시 /login.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-085
+        title: 사용자 시드
+        statement: 'Flyway 사진 없는 시드: 사용자(비밀번호 demo1234): jiwoo@resume.dev(지우), minjun@resume.dev(민준), seoyeon@resume.dev(서연)'
+        acceptance_hint: demo1234로 세 사용자 로그인
+        source_locator: &id005
+          document: SPEC-REQUEST.md
+          line: 130
+          quote: '- 사용자(비밀번호 demo1234): jiwoo@resume.dev(지우), minjun@resume.dev(민준), seoyeon@resume.dev(서연)'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-114
+        title: 에러 상태·코드 분류
+        statement: 미로그인 401과 로그인 이동, 없음·삭제·타인404, 입력·구조·지원 형식400, 중복 이메일409, 파일·content 크기413을 원문 코드로 구분한다.
+        acceptance_hint: 미로그인 보호 API는401·로그인 이동; 타인404; 사진 형식400·크기413; 중복가입409.; api_endpoint:GET /api/resumes/{id};
+          api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos; api_endpoint:POST /api/auth/signup
+        source_locator: &id016
+          document: SPEC-REQUEST.md
+          line: 102
+          quote: '- 401 미로그인(로그인 화면으로 이동), 404 없음·삭제·타인, 400 입력 오류·INVALID_STRUCTURE·UNSUPPORTED_FILE_TYPE, 409
+            DUPLICATE_EMAIL, 413 FILE_TOO_LARGE·CONTENT_TOO_LARGE.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-115
+        title: 오류 필드 계약
+        statement: 오류 응답은 code, message, field를 포함하는 원문 형식을 보존한다.
+        acceptance_hint: 입력 오류 응답에서 code·message·field를 확인하고 원문 DUPLICATE_EMAIL 등 코드를 구분한다. envelope 정합성은 OQ-009.;
+          api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos;
+          api_endpoint:POST /api/auth/signup
+        source_locator: &id017
+          document: SPEC-REQUEST.md
+          line: 103
+          quote: '- 오류 응답: { code, message, field }'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: 로그인
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-035
+      - REQ-036
+      - REQ-052
+      - REQ-085
+      security: []
+      responses:
+        '204':
+          description: '성공: 로그인; 본문 없는 응답의 설계 제안'
+        '400':
+          description: 입력 오류; 세부 필드 조건 확인 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      x-no-response-data-reason: 로그인 결과는 세션 수립이며 nickname은 GET /api/auth/me에서 조회한다. 204 본문 생략은 OQ-012 미승인 제안이다.
+      x-business-rules:
+      - email·password로 기존 users를 인증한다(REQ-052).
+      - 시드 계정은 demo1234로 로그인하고 본인 이력서만 이용한다(REQ-002, REQ-085). 로그인 실패 code/status는 OQ-004이다.
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      x-side-effects:
+      - 인증 성공 시 Spring Security 세션을 시작한다(REQ-052).
+      - 로그인으로 users·resume·photo 신규 행을 생성하지 않는다; 후속 본인 목록 접근이 허용된다(REQ-052).
+      x-required-tests:
+      - 'happy: jiwoo@resume.dev·demo1234로 로그인 -> 같은 세션 me.nickname=지우, 목록에서 지우 이력서 세 건 조회'
+      - 'auth: 로그인 전 보호 GET /api/resumes 호출 -> 401; 유효 login 뒤 같은 GET -> 본인 목록 응답'
+      - 'validation: LoginRequest의 email을 누락하여 요청 -> 400 입력 오류, field=email; 기존 users.password_hash 불변(구조 검증 wire
+        제안)'
+      - 'business: 지우로 로그인한 뒤 민준 resume를 조회 -> 404, 민준 resume.content 불변'
+      - 'side-effect: 유효 로그인 전후 users·resume·photo 행수 비교 -> 동일하고 인증 세션의 후속 GET /api/auth/me에서 지우 nickname 확인'
+      x-state-transitions:
+      - 비로그인 -> 자격 증명 확인 성공 후 로그인 세션
+      x-open-questions:
+      - 'OQ-004: 잘못된 자격 증명의 status/code 및 세션 보안 정책 미정'
+      - 'OQ-012: 성공 응답 미정'
+      x-contract-status: clarification_required
+      description: users 자격 증명으로 로그인 세션을 수립한다. 로그인 화면·후속 본인 목록과 시드 인증 검증을 지원한다. 잘못된 자격 증명의 응답 상세는 OQ-004이며 추측하지
+        않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: &id007
+          document: SPEC-REQUEST.md
+          line: 23
+          quote: '- 사용자는 자기 이력서·사진만 조회·수정한다. 타인 데이터는 404.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-035
+        title: 비밀번호 BCrypt
+        statement: 비밀번호 BCrypt
+        acceptance_hint: users.password_hash BCrypt이며 평문 없음
+        source_locator: *id003
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: *id004
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-052
+        title: 로그인
+        statement: 이메일·비밀번호 로그인
+        acceptance_hint: 시드 demo1234 로그인 후 본인 목록; api_endpoint:POST /api/auth/login
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 142
+          quote: '- 로그인: 이메일·비밀번호. 가입: 이메일(서버도 형식 검사), 닉네임 2~12자, 비밀번호 8자 이상, 비밀번호 확인. 가입 성공 시 자동 로그인 후 /resumes.
+            로그아웃 시 /login.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-085
+        title: 사용자 시드
+        statement: 'Flyway 사진 없는 시드: 사용자(비밀번호 demo1234): jiwoo@resume.dev(지우), minjun@resume.dev(민준), seoyeon@resume.dev(서연)'
+        acceptance_hint: demo1234로 세 사용자 로그인
+        source_locator: *id005
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: 로그아웃
+      x-related-requirements:
+      - REQ-001
+      - REQ-026
+      - REQ-036
+      - REQ-053
+      security:
+      - SessionCookie: []
+      responses:
+        '204':
+          description: '성공: 로그아웃; 본문 없는 응답의 설계 제안'
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      x-no-request-body-reason: 현재 세션을 종료하는 원문 동작이며 추가 사용자 입력이 없다.
+      x-no-response-data-reason: 세션 종료 뒤 UI가 /login으로 이동한다. 반환 업무 데이터는 요구되지 않는다; 204는 OQ-012 응답 제안.
+      x-business-rules:
+      - signup·login·health 외 API이므로 로그아웃 호출은 로그인 세션이 필요하다(REQ-001, REQ-053).
+      - 성공 후 /login으로 이동하고 이후 /resumes 접근은 로그인 화면으로 이동한다(REQ-053).
+      x-side-effects:
+      - 현재 인증 세션을 종료한다(REQ-053).
+      - 계정과 이력서·사진 데이터는 로그아웃 명령으로 삭제하지 않는다(REQ-053의 세션 종료 범위).
+      x-required-tests:
+      - 'happy: 로그인 세션으로 logout -> 뒤이어 GET /api/auth/me가 401, /resumes 접근 시 /login 이동'
+      - 'auth: 인증 세션 없이 logout -> 401, users·resume 행수 불변'
+      - 'validation: 로그아웃은 원문 입력 필드 없는 동작 -> 요청 body 없이 세션 종료가 가능하다; 임의 password/token 입력이 필요하지 않다'
+      - 'business: logout 완료 후 같은 세션 GET /api/resumes -> 401이며 로그아웃 사용자의 본인 목록을 제공하지 않는다'
+      - 'side-effect: logout 전후 resume.id·content와 photo.data 비교 -> 동일하고 세션으로 보호 조회가 거부된다'
+      x-state-transitions:
+      - 로그인 세션 -> 로그아웃 후 비로그인
+      x-open-questions:
+      - 'OQ-004: CSRF·세션 cookie 처리'
+      - 'OQ-012: 성공 응답 확인'
+      x-contract-status: clarification_required
+      description: 현재 세션을 종료한다. 헤더 로그아웃과 /login 이동을 지원하며 이력서·사진 삭제 명령이 아니다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-026
+        title: 공통 헤더
+        statement: 로고·닉네임·로그아웃 헤더, 편집기 툴바
+        acceptance_hint: 헤더 구성과 편집 툴바 표시
+        source_locator: &id006
+          document: SPEC-REQUEST.md
+          line: 54
+          quote: '- CMN-701: 헤더(로고, 닉네임, 로그아웃), 편집기는 툴바. 편집기는 1024px 이상 좌우 분할, 미만은 [입력][미리보기] 탭.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: *id004
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-053
+        title: 로그아웃
+        statement: 로그아웃 후 /login
+        acceptance_hint: FR-101 AC-03 로그아웃 뒤 /resumes는 /login; api_endpoint:POST /api/auth/logout
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 142
+          quote: '- 로그인: 이메일·비밀번호. 가입: 이메일(서버도 형식 검사), 닉네임 2~12자, 비밀번호 8자 이상, 비밀번호 확인. 가입 성공 시 자동 로그인 후 /resumes.
+            로그아웃 시 /login.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+  /api/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: 현재 사용자 조회
+      x-related-requirements:
+      - REQ-001
+      - REQ-026
+      - REQ-054
+      security:
+      - SessionCookie: []
+      responses:
+        '200':
+          description: '성공: 현재 사용자 조회'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/CurrentUser'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      x-open-questions:
+      - 'OQ-004: nickname 외 반환 필드·보안 정책'
+      - 'OQ-009: envelope 확인'
+      x-contract-status: clarification_required
+      description: 헤더에 필요한 현재 사용자 nickname을 반환한다. 로고·편집기 툴바는 응답 필드가 아니라 클라이언트 shell 구성이다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-026
+        title: 공통 헤더
+        statement: 로고·닉네임·로그아웃 헤더, 편집기 툴바
+        acceptance_hint: 헤더 구성과 편집 툴바 표시
+        source_locator: *id006
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-054
+        title: 현재 사용자
+        statement: GET /api/auth/me 현재 사용자
+        acceptance_hint: 헤더 닉네임 및 미로그인401, 응답필드 OQ-004; api_endpoint:GET /api/auth/me
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 145
+          quote: '- POST /api/auth/signup, /api/auth/login, /api/auth/logout, GET /api/auth/me'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      x-business-rules: []
+      x-side-effects:
+      - 현재 세션 사용자 조회만 수행하며 users 계정 정보를 변경하지 않는다.
+      x-required-tests:
+      - 'happy: 로그인 세션 GET me(REQ-054/REQ-026) ->nickname을 헤더에 표시·로고/로그아웃 표시·편집기는 툴바 표시'
+      - 'auth: 세션 없이 GET me(REQ-001) ->401 및 /login 이동; 추가 반환필드/세션보안은 OQ-004'
+  /api/resumes:
+    get:
+      operationId: listResumes
+      summary: 본인 이력서 목록
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-015
+      - REQ-036
+      - REQ-055
+      - REQ-056
+      - REQ-085
+      - REQ-086
+      - REQ-087
+      - REQ-088
+      - REQ-089
+      - REQ-104
+      - REQ-106
+      - REQ-108
+      security:
+      - SessionCookie: []
+      responses:
+        '200':
+          description: '성공: 본인 이력서 목록'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Resume'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      x-open-questions:
+      - 'OQ-010: page/size·filter·페이지 metadata·실제 pagination 채택 미정. 아래 parameters는 gate용 명시적 설계 후보이며 승인된 pagination
+        정책이 아니다. 전체 목록 상한을 발명하지 않는다.'
+      - 'OQ-012: 목록 반환 형태 제안 확인'
+      x-contract-status: clarification_required
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'OQ-010 / 확인 필요: pagination을 채택하는 경우의 query 후보. 실제 채택·기준 시작값·기본값·상한은 미정이며 승인된 제품 정책이 아니다.'
+        x-contract-status: clarification_required
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: 'OQ-010 / 확인 필요: pagination을 채택하는 경우의 query 후보. 실제 채택·기준 시작값·기본값·상한은 미정이며 승인된 제품 정책이 아니다.'
+        x-contract-status: clarification_required
+      x-filtering:
+        status: clarification_required
+        source_backed_predicates:
+        - resume.user_id=현재 사용자
+        - resume.deleted=false
+        source_backed_order: updated_at 내림차순
+        open_question: 'OQ-010: 사용자 입력 검색/filter는 원문 미명시; query 파라미터 발명 금지.'
+      x-business-rules:
+      - 본인이고 deleted=false인 이력서만 최근 수정순으로 제공한다(REQ-002, REQ-055).
+      - 썸네일은 제공된 template/style/content로 프론트의 동일 ResumeRenderer 첫 페이지를 그린다(REQ-056).
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      description: 본인·미삭제 resume의 title·수정 시간·template·style·content를 제공한다. 동일 ResumeRenderer가 첫 페이지 썸네일을 그리며 hidden
+        섹션은 출력하지 않는다. 시드·디자인·통합 검증은 이 목록과 실제 화면을 함께 확인한다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-015
+        title: 숨김 출력 제외
+        statement: 숨긴 섹션 미리보기·썸네일·PDF 제외
+        acceptance_hint: 세 출력에서 숨긴 경력 없음
+        source_locator: &id008
+          document: SPEC-REQUEST.md
+          line: 42
+          quote: '- CMN-321: 숨긴 섹션은 데이터를 보관하고 입력 패널에 흐리게 남는다. 미리보기·썸네일·PDF·필수값 검사·완성도에서는 없는 섹션으로 취급한다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: *id004
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-055
+        title: 목록
+        statement: 최근 수정순 2~4열, 첫 칸 새 이력서
+        acceptance_hint: FR-102 AC-03 지우3건, 타인·deleted 미노출; api_endpoint:GET /api/resumes
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 155
+          quote: '- 카드 그리드(2~4열), 최근 수정순. 첫 칸은 [+ 새 이력서].'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-056
+        title: 썸네일·편집 진입
+        statement: 썸네일·제목·수정 시간, 클릭 편집기
+        acceptance_hint: FR-102 AC-01 첫 페이지와 같은 썸네일·해당 id 편집기; api_endpoint:GET /api/resumes
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 156
+          quote: '- 카드: 썸네일, 제목, 수정 시간. 클릭 시 편집기. [⋯]: 이름 변경(빈 값 불가), 복제(" (사본)"), 삭제(확인 모달).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-085
+        title: 사용자 시드
+        statement: 'Flyway 사진 없는 시드: 사용자(비밀번호 demo1234): jiwoo@resume.dev(지우), minjun@resume.dev(민준), seoyeon@resume.dev(서연)'
+        acceptance_hint: demo1234로 세 사용자 로그인
+        source_locator: *id005
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-086
+        title: 백엔드 개발자 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "백엔드 개발자 이력서": modern·네이비, 8개 섹션 모두 채움, 필수값 충족, 2페이지, 완성도 90'
+        acceptance_hint: 8종·2페이지·90점
+        source_locator: &id009
+          document: SPEC-REQUEST.md
+          line: 131
+          quote: '- 지우 "백엔드 개발자 이력서": modern·네이비, 8개 섹션 모두 채움, 필수값 충족, 2페이지, 완성도 90'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-087
+        title: 신입 지원 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "신입 지원용": classic·블루, 기본정보·자기소개(본문 있음)·학력1·태그5·프로젝트2, 필수값 충족, 완성도 90'
+        acceptance_hint: 학력1·태그5·프로젝트2·90점
+        source_locator: &id010
+          document: SPEC-REQUEST.md
+          line: 132
+          quote: '- 지우 "신입 지원용": classic·블루, 기본정보·자기소개(본문 있음)·학력1·태그5·프로젝트2, 필수값 충족, 완성도 90'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-088
+        title: 작성 중 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "작성 중인 이력서": classic·차콜, 기본정보(희망 직무 빈칸)와 숨긴 경력(회사명 빈 항목 1개)만, 완성도 0'
+        acceptance_hint: 희망 직무 빈칸·숨김 경력·0점
+        source_locator: &id011
+          document: SPEC-REQUEST.md
+          line: 133
+          quote: '- 지우 "작성 중인 이력서": classic·차콜, 기본정보(희망 직무 빈칸)와 숨긴 경력(회사명 빈 항목 1개)만, 완성도 0'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-089
+        title: 격리·삭제 시드
+        statement: 'Flyway 사진 없는 시드: 민준 "민준 이력서" 1건, 서연 deleted=true 1건'
+        acceptance_hint: 민준1건·서연 deleted1건 지우 목록 미노출
+        source_locator: &id012
+          document: SPEC-REQUEST.md
+          line: 134
+          quote: '- 민준 "민준 이력서" 1건, 서연 deleted=true 1건'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-104
+        title: 레퍼런스 적용
+        statement: '적용 방식: 레퍼런스는 복제 대상이 아니라 UI/UX 구현 계약이다. sidebar, header, dashboard card, table/form density,
+          spacing, color token, responsive behavior를 대상 도메인에 맞게 적용해야 한다.'
+        acceptance_hint: ui-design.md에서 편집 좌우 배치·헤더·카드·폼 밀도·반응형 근거 확인
+        source_locator: &id013
+          document: SPEC-REQUEST.md
+          line: 272
+          quote: '- 적용 방식: 레퍼런스는 복제 대상이 아니라 UI/UX 구현 계약이다. sidebar, header, dashboard card, table/form density,
+            spacing, color token, responsive behavior를 대상 도메인에 맞게 적용해야 한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-106
+        title: Frontend 디자인 반영
+        statement: frontend/ 변경은 ui-design.md의 레퍼런스 계약을 반영해야 한다.
+        acceptance_hint: 'Frontend 디자인 반영: frontend/ 변경은 ui-design.md의 레퍼런스 계약을 반영해야 한다. 실제 산출물·구성 확인'
+        source_locator: &id014
+          document: SPEC-REQUEST.md
+          line: 283
+          quote: '- frontend/ 변경은 ui-design.md의 레퍼런스 계약을 반영해야 한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-108
+        title: API·화면 통합 검증
+        statement: preview 또는 quickstart 검증에서 backend API와 frontend 화면을 함께 확인한다.
+        acceptance_hint: preview 또는 quickstart 동일 환경에서 화면과 API 결과 확인
+        source_locator: &id015
+          document: SPEC-REQUEST.md
+          line: 285
+          quote: '- preview 또는 quickstart 검증에서 backend API와 frontend 화면을 함께 확인한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      x-side-effects:
+      - 목록 조회는 resume의 deleted·content·updated_at을 변경하지 않는다.
+      x-pagination:
+        status: clarification_required
+        reason: 'OQ-010: pagination 채택 여부와 전체 목록 상한은 원문에 없다. page/size는 계약 검토 후보이며 비페이지·bounded 정책을 확정하지 않는다.'
+      x-required-tests:
+      - 'happy: 지우 로그인 후 GET 목록(REQ-055) ->본인 미삭제3건·updated_at 내림차순·2~4열 카드·첫 칸 새 이력서'
+      - 'isolation: 지우·민준·서연으로 각각 GET 목록(REQ-089) ->지우에 타인/삭제 행 없음·민준 이력서1건·서연 deleted=true 행 미노출'
+      - 'thumbnail: GET 목록의 template/style/content로 첫 페이지 렌더(REQ-056/REQ-015) ->편집기 첫 페이지와 같음·숨김 경력 없음·카드 클릭 후 해당
+        id 편집기'
+      - 'routes: / 진입 후 목록 카드 클릭 및 PDF 내보내기(REQ-036) ->/resumes로 이동·/resumes/:id/edit 진입·/print/:id는 숨긴 iframe에서만
+        사용'
+      - 'integration: 같은 preview/quickstart 환경에서 본인 목록 GET와 /resumes 표시(REQ-108) ->API의 id/title과 화면 카드 id/title
+        일치'
+      - 'seed-complete: 지우의 백엔드 개발자 이력서와 신입 지원용 카드 열기(REQ-086/REQ-087) ->사진 없음·각 점수90, 전자는8종/modern/#1F3A5F/2페이지·후자는classic/#2563EB/학력1/태그5/프로젝트2'
+      - 'design: 목록/편집 화면을 구현된 레퍼런스 계약과 대조(REQ-104/REQ-106) ->헤더·카드·폼 밀도·spacing·color token·반응형 근거가 일치; 이번 제한 입력에
+        ui-design.md가 없으므로 세부값 대조는 확인 필요'
+    post:
+      operationId: createResume
+      summary: 새 이력서 생성
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-036
+      - REQ-061
+      - REQ-092
+      - REQ-094
+      - REQ-099
+      - REQ-107
+      security:
+      - SessionCookie: []
+      responses:
+        '201':
+          description: '성공: 새 이력서 생성'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/CreatedResume'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: 입력 오류·허용하지 않는 template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResumeRequest'
+      x-business-rules:
+      - 현재 사용자의 새 resume로 저장하고 선택 template와 기본 제목 새 이력서를 사용한다(REQ-061).
+      - '초기 content는 basics·summary·experience·education·skills이며 basics.email=가입 email, style은 #1F3A5F·pretendard·medium(REQ-061).'
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      - 'REQ-092/REQ-099: 영속 저장은 PostgreSQL 16.x를 사용한다. DB명·주소·계정은 OQ-013, patch/tag/digest는 OQ-014로 남긴다.'
+      - 'REQ-094: 실행·영속성 seed block은 파생 projection이며 독립 SSOT나 승인이 아니다. estimated:true·추정 — 사용자 미확인은 승인으로 처리하지 않으며
+        JPA/mybatis 충돌 OQ-001을 유지한다.'
+      x-side-effects:
+      - resume에 새 행을 저장하고 user_id를 현재 사용자로 정한다(REQ-061, REQ-002).
+      - 생성 id로 편집기를 열고 GET /api/resumes/{id}로 초기 데이터를 조회한다(REQ-061).
+      x-required-tests:
+      - 'happy: 로그인 후 title=새 이력서·template=classic 생성 -> 반환 id GET에서 해당 title·classic과 원문 초기 섹션 확인'
+      - 'auth: 세션 없이 새 이력서 생성 -> 401, resume 행수 불변'
+      - 'validation: template=unknown 생성 -> 400 입력 오류의 field=template, resume 신규 행 없음'
+      - 'business: 지우 세션으로 생성 -> GET의 basics.email=jiwoo@resume.dev, 민준 목록에는 새 id 없음'
+      - 'side-effect: 생성 완료 -> resume.user_id가 지우 id이고 style.color=#1F3A5F·font=pretendard·size=medium 저장'
+      x-open-questions:
+      - 'OQ-003: 생성 제목 빈값·공백 정책'
+      - 'OQ-011: 초기 items 상세'
+      - 'OQ-012: 201·id wire 표현은 제안'
+      x-contract-status: clarification_required
+      description: 본인 resume 행과 지정 초기 content·style을 실제 PostgreSQL에 저장한다. 새 id 조회·편집 진입을 지원한다. DB 종류/버전·migration·미승인
+        실행 seed는 구현 제약이며 이 API가 실행 정책을 변경하지 않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: *id004
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-061
+        title: 새 이력서
+        statement: 제목 기본 새 이력서·템플릿 선택 후 편집기
+        acceptance_hint: 가입 이메일 basics·summary·experience·education·skills, 네이비·pretendard·medium; api_endpoint:POST
+          /api/resumes
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 157
+          quote: '- 새 이력서: 제목(기본 "새 이력서")과 템플릿 선택 모달 → 편집기.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-092
+        title: Database 고정
+        statement: 'Database: PostgreSQL'
+        acceptance_hint: 'Database 고정: Database: PostgreSQL 실제 산출물·구성 확인'
+        source_locator: &id033
+          document: SPEC-REQUEST.md
+          line: 231
+          quote: '- Database: PostgreSQL'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-094
+        title: 실행 계약 보존
+        statement: 아래 block은 실행·영속성 seed contract(초기 계약)이자 projection(파생 투영물)이며 독립 SSOT가 아니다.
+        acceptance_hint: 원본 seed 보존 및 plan.md 정본, JPA/MyBatis 충돌 OQ-001 해결 전 build-ready 아님
+        source_locator: &id034
+          document: SPEC-REQUEST.md
+          line: 235
+          quote: '- 아래 block은 실행·영속성 seed contract(초기 계약)이자 projection(파생 투영물)이며 독립 SSOT가 아니다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-099
+        title: BOM postgres
+        statement: 'postgres: 16.x'
+        acceptance_hint: 'BOM postgres: postgres: 16.x 실제 산출물·구성 확인'
+        source_locator: &id035
+          document: SPEC-REQUEST.md
+          line: 260
+          quote: '- postgres: 16.x'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-107
+        title: migration 기준 필수
+        statement: DB 스키마 또는 migration 기준이 없으면 신규생성 구현은 불완전한 것으로 간주한다.
+        acceptance_hint: 'migration 기준 필수: DB 스키마 또는 migration 기준이 없으면 신규생성 구현은 불완전한 것으로 간주한다. 실제 산출물·구성 확인'
+        source_locator: &id036
+          document: SPEC-REQUEST.md
+          line: 284
+          quote: '- DB 스키마 또는 migration 기준이 없으면 신규생성 구현은 불완전한 것으로 간주한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      x-state-transitions:
+      - 본인 새 resume 부재 -> 선택 template·기본 style/content의 새 resume 생성
+  /api/resumes/{id}:
+    get:
+      operationId: getResume
+      summary: 이력서 조회
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-004
+      - REQ-005
+      - REQ-007
+      - REQ-009
+      - REQ-010
+      - REQ-011
+      - REQ-012
+      - REQ-014
+      - REQ-015
+      - REQ-016
+      - REQ-017
+      - REQ-018
+      - REQ-019
+      - REQ-026
+      - REQ-027
+      - REQ-034
+      - REQ-036
+      - REQ-038
+      - REQ-039
+      - REQ-040
+      - REQ-046
+      - REQ-047
+      - REQ-048
+      - REQ-049
+      - REQ-062
+      - REQ-067
+      - REQ-069
+      - REQ-070
+      - REQ-073
+      - REQ-075
+      - REQ-076
+      - REQ-086
+      - REQ-087
+      - REQ-088
+      - REQ-089
+      - REQ-104
+      - REQ-106
+      - REQ-108
+      - REQ-114
+      - REQ-115
+      security:
+      - SessionCookie: []
+      responses:
+        '200':
+          description: '성공: 이력서 조회'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/Resume'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·삭제·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ResourceId'
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      x-open-questions:
+      - 'OQ-009: envelope 정합성'
+      - 'OQ-DATA-001: resume 식별자 표현'
+      x-contract-status: clarification_required
+      description: 저장된 title·template·style·content를 편집기 및 iframe 인쇄에 제공한다. 숨김 데이터도 반환하여 입력 패널 보존을 지원한다. 숨김 출력 제외·필수
+        검사·완성도·색·줌·페이지·포커스·반응형·카드 펼침·스크롤·CSS는 클라이언트에서 수행한다. 계산 결과·줌·페이지 수를 응답이나 DB 필드로 추가하지 않으며 실시간 미리보기 전용 요청을
+        만들지 않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-004
+        title: 섹션 배열
+        statement: 본문은 basics, summary, experience, education, skills, projects, certificates, languages 8종 섹션 배열
+        acceptance_hint: 8종 저장·조회 및 기타 type INVALID_STRUCTURE; api_endpoint:PUT /api/resumes/{id}
+        source_locator: &id018
+          document: SPEC-REQUEST.md
+          line: 31
+          quote: '- CMN-301: 본문은 섹션 배열이다. 종류 8개: basics(기본정보), summary(자기소개), experience(경력), education(학력), skills(기술스택),
+            projects(프로젝트), certificates(자격증), languages(어학).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-005
+        title: basics 고정
+        statement: basics 첫 번째, 이동·숨김·삭제 불가
+        acceptance_hint: 금지 버튼 없음 및 비첫번째·숨김 basics 저장 거부; api_endpoint:PUT /api/resumes/{id}
+        source_locator: &id019
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-007
+        title: 종류 중복 금지
+        statement: 같은 종류 하나만
+        acceptance_hint: 존재 type 추가 후보 없음, 중복 type 저장 거부; api_endpoint:PUT /api/resumes/{id}
+        source_locator: &id020
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-009
+        title: 날짜 형식
+        statement: 날짜는 YYYY.MM 문자열
+        acceptance_hint: 잘못된 형식 빨간 경고, 저장은 허용
+        source_locator: &id021
+          document: SPEC-REQUEST.md
+          line: 34
+          quote: '- CMN-304: 날짜는 YYYY.MM 문자열. 재직중/재학중 체크 시 종료란 비활성, 미리보기에 "현재".'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-010
+        title: 현재 상태
+        statement: 재직·재학중 체크 시 종료 비활성, 미리보기 현재
+        acceptance_hint: 체크는 비활성·현재, 해제는 종료란 활성
+        source_locator: &id022
+          document: SPEC-REQUEST.md
+          line: 34
+          quote: '- CMN-304: 날짜는 YYYY.MM 문자열. 재직중/재학중 체크 시 종료란 비활성, 미리보기에 "현재".'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-011
+        title: 필수 판정
+        statement: basics 이름·희망 직무·이메일과 항목 첫 필드만 필수, 공백 제거 후 1자 이상, 이메일은 원문 정규식
+        acceptance_hint: 빈 jobTitle·abc@ 미충족, 선택 필드 빈 값은 위반 아님
+        source_locator: &id023
+          document: SPEC-REQUEST.md
+          line: 37
+          quote: '- CMN-311: 필수 필드는 basics의 이름·희망 직무·이메일과 각 항목의 첫 필드(회사명·학교명·프로젝트명·자격증명·언어)뿐이다. 공백 제거 후 1자 이상이면
+            충족이며, 이메일은 정규식 ^[^\s@]+@[^\s@]+\.[^\s@]+$ 에도 맞아야 한다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-012
+        title: 필수 검사 경계
+        statement: 프론트에서 표시 섹션만 필수 검사, 완성도·PDF에만 사용
+        acceptance_hint: 숨긴 company 누락 제외 및 필수값 누락 자동저장 허용
+        source_locator: &id024
+          document: SPEC-REQUEST.md
+          line: 38
+          quote: '- CMN-312: 필수값 검사는 프론트에서만, 숨기지 않은 섹션에만 하며 완성도와 PDF 내보내기에만 쓴다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-014
+        title: 숨김 데이터 보관
+        statement: 숨김 섹션 데이터 보관, 입력 패널에 흐리게 유지
+        acceptance_hint: 다시 표시 시 원래 items 복원; api_endpoint:PUT /api/resumes/{id}
+        source_locator: &id025
+          document: SPEC-REQUEST.md
+          line: 42
+          quote: '- CMN-321: 숨긴 섹션은 데이터를 보관하고 입력 패널에 흐리게 남는다. 미리보기·썸네일·PDF·필수값 검사·완성도에서는 없는 섹션으로 취급한다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-015
+        title: 숨김 출력 제외
+        statement: 숨긴 섹션 미리보기·썸네일·PDF 제외
+        acceptance_hint: 세 출력에서 숨긴 경력 없음
+        source_locator: *id008
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-016
+        title: 숨김 평가 제외
+        statement: 숨긴 섹션 필수 검사·완성도에서 없는 것으로 취급
+        acceptance_hint: 숨긴 빈 company 누락 제외, 숨긴 본문·태그 가점 없음
+        source_locator: &id026
+          document: SPEC-REQUEST.md
+          line: 42
+          quote: '- CMN-321: 숨긴 섹션은 데이터를 보관하고 입력 패널에 흐리게 남는다. 미리보기·썸네일·PDF·필수값 검사·완성도에서는 없는 섹션으로 취급한다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-017
+        title: 완성도 점수
+        statement: 필수 모두 50, 자기소개 본문 10, 경력 또는 프로젝트 1개 이상 20, 태그 3개 이상 10, 사진 10, 충족 전부 아니면 0, 항목0개 필수충족
+        acceptance_hint: 지우 시드 90·90·0
+        source_locator: &id027
+          document: SPEC-REQUEST.md
+          line: 45
+          quote: '- CMN-331: 기준별 점수 합(충족 시 전부, 아니면 0): 필수값 모두 충족 50(항목 0개 섹션은 충족), 자기소개 본문 1자 이상 10, 경력 또는 프로젝트
+            항목 1개 이상 20, 기술 태그 3개 이상 10, 사진 등록 10.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-018
+        title: 완성도 즉시 비저장
+        statement: 프론트 순수 함수로 즉시 계산, 서버 저장 없음
+        acceptance_hint: 입력 직후 계산, PUT·DB에 완성도 저장 없음
+        source_locator: &id028
+          document: SPEC-REQUEST.md
+          line: 46
+          quote: '- CMN-332: 프론트 순수 함수로 즉시 계산, 서버 저장 없음. 막대 색: 50 미만 빨강, 80 미만 주황, 그 이상 초록.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-019
+        title: 완성도 색
+        statement: 50 미만 빨강, 80 미만 주황, 그 이상 초록
+        acceptance_hint: 0 빨강, 50 주황, 90 초록
+        source_locator: &id029
+          document: SPEC-REQUEST.md
+          line: 46
+          quote: '- CMN-332: 프론트 순수 함수로 즉시 계산, 서버 저장 없음. 막대 색: 50 미만 빨강, 80 미만 주황, 그 이상 초록.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-026
+        title: 공통 헤더
+        statement: 로고·닉네임·로그아웃 헤더, 편집기 툴바
+        acceptance_hint: 헤더 구성과 편집 툴바 표시
+        source_locator: *id006
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-027
+        title: 반응형
+        statement: 1024px 이상 좌우 분할, 미만 입력·미리보기 탭
+        acceptance_hint: 1024px 분할, 1023px 탭
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 54
+          quote: '- CMN-701: 헤더(로고, 닉네임, 로그아웃), 편집기는 툴바. 편집기는 1024px 이상 좌우 분할, 미만은 [입력][미리보기] 탭.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-036
+        title: 화면 경로
+        statement: /login, /signup, /resumes, /resumes/:id/edit, /print/:id, /는 /resumes, print는 iframe 전용
+        acceptance_hint: 루트 리디렉션과 iframe 인쇄 경로 확인
+        source_locator: *id004
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-038
+        title: 입력 패널
+        statement: 완성도·섹션 카드·없는 종류만 섹션 추가
+        acceptance_hint: 존재 type은 추가 후보 없음
+        source_locator: &id030
+          document: SPEC-REQUEST.md
+          line: 112
+          quote: '- 좌측: 완성도 막대, 섹션 카드, 맨 아래 [+ 섹션 추가](없는 종류만).'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-039
+        title: 카드 헤더
+        statement: 핸들·섹션명·항목 수·눈·휴지통·접기, basics 금지 조작 제외
+        acceptance_hint: basics 금지 요소 없음, 경력 항목 수 표시
+        source_locator: &id031
+          document: SPEC-REQUEST.md
+          line: 113
+          quote: '- 섹션 카드 헤더: 드래그 핸들, 섹션명, 항목 수, 눈(숨김), 휴지통, 접기. basics는 핸들·눈·휴지통 없음.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-040
+        title: 항목 펼침
+        statement: 첫 필드 · 둘째 필드 · 기간 요약, 빈 첫 필드 (제목 없음), 한 번에 하나 펼침
+        acceptance_hint: 둘째 클릭 시 첫 항목 접힘, 빈 company 요약 확인
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 114
+          quote: '- 항목: 접힌 요약 줄(첫 필드 · 둘째 필드 · 기간, 첫 필드가 비면 "(제목 없음)"), 클릭 시 펼침(한 번에 하나). [복제][삭제], [+ 항목 추가](20개면
+            비활성).'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-046
+        title: 글머리 렌더
+        statement: '- 줄은 글머리표'
+        acceptance_hint: 일반 줄 유지, - 줄만 글머리표
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 116
+          quote: '- 업무 내용·설명은 Enter 시 "- " 자동 삽입, 미리보기에서 "- " 줄은 글머리표.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-047
+        title: 미리보기 줌
+        statement: A4 줌50~150%, 맞춤 기본
+        acceptance_hint: 50·150% 배율 및 맞춤 적용
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 117
+          quote: '- 우측: A4 미리보기, 줌 50~150%와 [맞춤](기본), 넘치면 다음 용지를 이어 그리고 하단에 "총 N페이지". 좌측 카드를 펼치면 해당 섹션으로 스크롤.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-048
+        title: 페이지 이어 그리기
+        statement: 넘치면 다음 용지와 총 N페이지
+        acceptance_hint: 2페이지 시드 총2페이지, 장문 정책 OQ-002
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 117
+          quote: '- 우측: A4 미리보기, 줌 50~150%와 [맞춤](기본), 넘치면 다음 용지를 이어 그리고 하단에 "총 N페이지". 좌측 카드를 펼치면 해당 섹션으로 스크롤.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-049
+        title: 섹션 스크롤
+        statement: 카드 펼치면 해당 섹션으로 스크롤
+        acceptance_hint: 경력 펼침 후 경력 영역 이동, 숨김 대상 OQ-007
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 117
+          quote: '- 우측: A4 미리보기, 줌 50~150%와 [맞춤](기본), 넘치면 다음 용지를 이어 그리고 하단에 "총 N페이지". 좌측 카드를 펼치면 해당 섹션으로 스크롤.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-062
+        title: 편집 자료 로드
+        statement: 공통 구조·필드로 편집기 로드
+        acceptance_hint: GET title·template·style·content가 입력과 미리보기에 표시; api_endpoint:GET /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 170
+          quote: '- 공통 적용의 편집기 구조·입력 필드, CMN-341~343 자동저장을 구현한다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-067
+        title: 미충족 기준
+        statement: 완성도 클릭 미충족 목록
+        acceptance_hint: 사진 없으면 사진을 등록하세요 (+10%)
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 173
+          quote: '- 완성도 막대 클릭 시 미충족 기준 목록(예: "사진을 등록하세요 (+10%)").'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-069
+        title: classic
+        statement: 1단, 상단 왼쪽 이름·직무·연락처 오른쪽 사진, 사진 없으면 전체 폭, 섹션 제목 아래 강조색 선
+        acceptance_hint: 사진 유무별 폭·1단·선 확인
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 190
+          quote: '- classic: 1단. 상단 왼쪽 이름·직무·연락처, 오른쪽 사진(없으면 전체 폭). 섹션 제목 아래 강조색 선.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-070
+        title: modern
+        statement: 32% 강조색 흰 글씨 사이드바 사진·이름·직무·연락처·기술·어학·자격증, 68% 자기소개·경력·프로젝트·학력, 각 단내 순서
+        acceptance_hint: 32:68·단별 섹션 배치와 순서 일치
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 191
+          quote: '- modern: 2단. 왼쪽 32% 강조색 사이드바(흰 글씨)에 사진·이름·직무·연락처·기술스택·어학·자격증, 오른쪽 68%에 자기소개·경력·프로젝트·학력. 섹션 순서는
+            각 단 안에서 적용.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-073
+        title: PDF 누락 모달
+        statement: 누락 모달 경력 2번째 · 회사명 형태, 클릭 포커스, 날짜경고 허용
+        acceptance_hint: FR-105 AC-01 작성 중 시드 기본정보 · 희망 직무 하나, 인쇄 없음
+        source_locator: &id032
+          document: SPEC-REQUEST.md
+          line: 203
+          quote: '- DEC-106 절차. 빠진 항목 모달은 "경력 2번째 · 회사명" 형식, 클릭 시 해당 입력란 포커스. 날짜 경고는 막지 않는다.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-075
+        title: iframe 인쇄
+        statement: DEC-106 숨긴 /print/:id iframe 서버데이터 렌더 후 window.print(), 팝업 없음
+        acceptance_hint: FR-105 AC-03 미리보기와 동일·편집 UI 및 숨김 섹션 없음; api_endpoint:GET /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 203
+          quote: '- DEC-106 절차. 빠진 항목 모달은 "경력 2번째 · 회사명" 형식, 클릭 시 해당 입력란 포커스. 날짜 경고는 막지 않는다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-076
+        title: 인쇄 CSS·제목
+        statement: '@page A4 margin 0, break-inside: avoid, print-color-adjust: exact, title 이름_희망직무_이력서'
+        acceptance_hint: 세 속성과 실제 name·jobTitle 제목 확인
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 204
+          quote: '- 인쇄 CSS: @page A4 margin 0, 항목 break-inside: avoid, print-color-adjust: exact. document.title은
+            "이름_희망직무_이력서".'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-086
+        title: 백엔드 개발자 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "백엔드 개발자 이력서": modern·네이비, 8개 섹션 모두 채움, 필수값 충족, 2페이지, 완성도 90'
+        acceptance_hint: 8종·2페이지·90점
+        source_locator: *id009
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-087
+        title: 신입 지원 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "신입 지원용": classic·블루, 기본정보·자기소개(본문 있음)·학력1·태그5·프로젝트2, 필수값 충족, 완성도 90'
+        acceptance_hint: 학력1·태그5·프로젝트2·90점
+        source_locator: *id010
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-088
+        title: 작성 중 시드
+        statement: 'Flyway 사진 없는 시드: 지우 "작성 중인 이력서": classic·차콜, 기본정보(희망 직무 빈칸)와 숨긴 경력(회사명 빈 항목 1개)만, 완성도 0'
+        acceptance_hint: 희망 직무 빈칸·숨김 경력·0점
+        source_locator: *id011
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-089
+        title: 격리·삭제 시드
+        statement: 'Flyway 사진 없는 시드: 민준 "민준 이력서" 1건, 서연 deleted=true 1건'
+        acceptance_hint: 민준1건·서연 deleted1건 지우 목록 미노출
+        source_locator: *id012
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-104
+        title: 레퍼런스 적용
+        statement: '적용 방식: 레퍼런스는 복제 대상이 아니라 UI/UX 구현 계약이다. sidebar, header, dashboard card, table/form density,
+          spacing, color token, responsive behavior를 대상 도메인에 맞게 적용해야 한다.'
+        acceptance_hint: ui-design.md에서 편집 좌우 배치·헤더·카드·폼 밀도·반응형 근거 확인
+        source_locator: *id013
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-106
+        title: Frontend 디자인 반영
+        statement: frontend/ 변경은 ui-design.md의 레퍼런스 계약을 반영해야 한다.
+        acceptance_hint: 'Frontend 디자인 반영: frontend/ 변경은 ui-design.md의 레퍼런스 계약을 반영해야 한다. 실제 산출물·구성 확인'
+        source_locator: *id014
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-108
+        title: API·화면 통합 검증
+        statement: preview 또는 quickstart 검증에서 backend API와 frontend 화면을 함께 확인한다.
+        acceptance_hint: preview 또는 quickstart 동일 환경에서 화면과 API 결과 확인
+        source_locator: *id015
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-114
+        title: 에러 상태·코드 분류
+        statement: 미로그인 401과 로그인 이동, 없음·삭제·타인404, 입력·구조·지원 형식400, 중복 이메일409, 파일·content 크기413을 원문 코드로 구분한다.
+        acceptance_hint: 미로그인 보호 API는401·로그인 이동; 타인404; 사진 형식400·크기413; 중복가입409.; api_endpoint:GET /api/resumes/{id};
+          api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos; api_endpoint:POST /api/auth/signup
+        source_locator: *id016
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-115
+        title: 오류 필드 계약
+        statement: 오류 응답은 code, message, field를 포함하는 원문 형식을 보존한다.
+        acceptance_hint: 입력 오류 응답에서 code·message·field를 확인하고 원문 DUPLICATE_EMAIL 등 코드를 구분한다. envelope 정합성은 OQ-009.;
+          api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos;
+          api_endpoint:POST /api/auth/signup
+        source_locator: *id017
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-034
+        title: 브라우저 미리보기
+        statement: 미리보기 서버 경유 없음
+        acceptance_hint: 입력·스타일 변경 때 미리보기용 서버 호출 없음
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 61
+          quote: '- 미리보기는 서버를 거치지 않는다. 비밀번호 BCrypt.'
+        responsibility: GET은 최초 로드·iframe 데이터만 제공한다. 로컬 미리보기 입력/설정 변경에는 전용 서버 호출을 만들지 않는다.
+      x-business-rules:
+      - 'REQ-014/REQ-015/REQ-016: GET은 hidden 섹션의 data/items도 보존하여 반환한다. 프론트는 이를 입력 패널에 유지하되 미리보기·썸네일·PDF와 필수 검사·완성도에서
+        없는 것으로 취급한다.'
+      - 'REQ-011/REQ-012: 필수 판정은 표시 섹션의 basics.name/jobTitle/email과 항목 첫 필드만 대상으로 공백 제거 후 1자 이상, 이메일은 ^[^\s@]+@[^\s@]+\.[^\s@]+$이다.
+        프론트 완성도·PDF 검사에만 쓰며 저장 거부 규칙이 아니다. 공백 처리 세부는 OQ-003이다.'
+      - 'REQ-017/REQ-018/REQ-019: 충족한 기준별 50/10/20/10/10을 전부 가산하고 미충족이면 해당 기준은 0이다. 항목0개 섹션 필수는 충족이다. 표시 섹션의 필수
+        모두50, 자기소개 본문1자10, 경력 또는 프로젝트1개20, 태그3개10, 사진10; 프론트 즉시 계산·비저장이며 50 미만 빨강·80 미만 주황·그 이상 초록이다.'
+      - 'REQ-069/REQ-070: classic은 1단·상단 왼쪽 이름/직무/연락처·오른쪽 사진, 사진 없으면 전체 폭·섹션 제목 아래 강조색 선이다. modern은 32% 강조색 흰 글씨
+        사이드바의 사진/이름/직무/연락처/기술/어학/자격증과 68% 자기소개/경력/프로젝트/학력이며 각 단내 content 순서를 적용한다.'
+      - 'REQ-073/REQ-075/REQ-076: 프론트 필수 누락은 위치 모달·클릭 포커스로 인쇄를 차단한다. 날짜 경고만으로 차단하지 않는다. 저장 성공 후 숨긴 /print/:id iframe이
+        이 GET 데이터를 렌더하고 window.print()한다. @page A4 margin 0, break-inside: avoid, print-color-adjust: exact와 이름_희망직무_이력서
+        제목을 적용한다. 별도 PDF API는 없다.'
+      - 'REQ-034/REQ-047/REQ-048: 실시간 미리보기는 서버 경유 없이 공통 ResumeRenderer로 A4 794×1123px, 줌50~150%·맞춤 기본·넘침 다음 용지·총
+        N페이지를 표시한다. 반복 헤더/사이드바·장문 분할은 OQ-002이다.'
+      x-side-effects:
+      - 읽기만 수행하며 resume·photo를 변경하지 않는다. 로컬 렌더와 완성도 계산은 서버 저장 부작용을 갖지 않는다.
+      x-required-tests:
+      - 'happy: 본인 resume GET(REQ-062) -> data.title/template/style/content가 저장 행과 같고 편집 폼과 미리보기에 표시'
+      - 'auth: 미로그인 GET ->401, 타인·deleted 이력서 GET ->404(REQ-001/REQ-002/REQ-060)'
+      - 'hidden-output: hidden=true 경력 포함 GET 후 미리보기·썸네일·PDF 렌더(REQ-014/REQ-015) -> 입력 패널에 흐리게 data/items 유지·세 출력에는
+        경력 없음'
+      - 'hidden-evaluation: 숨긴 빈 company·숨긴 summary.body·숨긴 skills.tags로 로컬 평가(REQ-016) -> 누락 목록에 company 없음·숨긴
+        본문/태그 가점 없음'
+      - 'required: 표시 name/jobTitle/email과 항목 첫 필드에 공백만 또는 email=abc@ 입력(REQ-011) -> 원문 공백 제거 후1자/정규식 기준 미충족; 선택
+        필드 빈값은 위반 아님, 공백 세부는 OQ-003'
+      - 'completion: 지우 시드3건 GET 후 순수 함수 평가(REQ-017/REQ-018/REQ-086/REQ-087/REQ-088) -> 백엔드 개발자 이력서90·신입 지원용90·작성
+        중인 이력서0, 서버/DB 완성도 필드 없음'
+      - 'completion-empty-items: 표시 항목 섹션 items=[]로 로컬 필수 검사(REQ-017) -> 해당 항목 섹션 필수 기준 충족; 다른 가점은 각각 자기 조건으로 계산'
+      - 'completion-colors: 계산 결과0·50·79·80·90 렌더(REQ-019) -> 각각 빨강·주황·주황·초록·초록'
+      - 'missing-criteria: 사진 없는 시드 로드 후 완성도 클릭(REQ-067) -> 사진을 등록하세요 (+10%) 표시'
+      - 'responsive: GET 로드 후 viewport1024px/1023px(REQ-027) -> 좌우 분할/입력·미리보기 탭 표시'
+      - 'section-card: GET 로드 후 섹션 카드·추가 후보 열기(REQ-038/REQ-039) -> 완성도·섹션명·항목수·접기 표시, basics 핸들/눈/휴지통 없음·이미 있는 type은
+        후보 없음'
+      - 'item-expand: 빈 첫 필드 항목과 두 항목을 로드하고 둘째 클릭(REQ-040) -> 요약 (제목 없음)·첫 필드 · 둘째 필드 · 기간 형식, 첫 항목 접힘·둘째만 펼침'
+      - 'bullet: description의 일반 줄과 "- " 시작 줄 렌더(REQ-046) -> 일반 줄 유지·"- " 줄만 글머리표'
+      - 'zoom: 이력서 로드 후50%·150%·맞춤 클릭(REQ-047) -> 각 배율 적용·최초 기본은 맞춤'
+      - 'pages: 백엔드 개발자 이력서 로드(REQ-048/REQ-086) -> 이어진 A4 두 용지·총 2페이지, 장문 분할 정책은 OQ-002'
+      - 'scroll: 표시 경력 카드 펼침(REQ-049) -> 미리보기 경력 영역으로 스크롤; 숨김 대상 동작은 OQ-007 확인 필요'
+      - 'classic: classic 데이터에서 사진 연결 유무별 렌더(REQ-069) ->1단·이름/직무/연락처 왼쪽·사진 오른쪽, 사진 없으면 전체 폭·제목 아래 강조색 선'
+      - 'modern: modern 데이터 렌더 및 각 단 섹션 순서 변경(REQ-070) ->32% 강조색/흰 글씨 사이드바에 사진·이름·직무·연락처·skills/languages/certificates,68%에
+        summary/experience/projects/education·각 단내 순서 일치'
+      - 'print: 필수충족·저장 성공 후 /print/:id iframe에서 GET(REQ-075/REQ-076) -> window.print 호출·팝업 없음·편집 UI/숨김 섹션 제외·미리보기
+        동일, @page A4 margin0·break-inside avoid·print-color-adjust exact·실제 name_jobTitle_이력서 제목'
+      - 'local-preview: 최초 GET 완료 후 입력/스타일 변경(REQ-034/REQ-018) -> 미리보기/완성도 즉시 갱신·미리보기 전용 서버 호출 없음'
+      - 'seed-incomplete: 작성 중인 이력서 GET(REQ-088) ->classic·#374151·basics.jobTitle 빈칸·경력 hidden=true·빈 company 항목1개만,
+        사진 없음·프론트 점수0'
+    put:
+      operationId: saveResume
+      summary: 이력서 전체 저장
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-004
+      - REQ-005
+      - REQ-007
+      - REQ-008
+      - REQ-009
+      - REQ-010
+      - REQ-011
+      - REQ-012
+      - REQ-013
+      - REQ-014
+      - REQ-015
+      - REQ-016
+      - REQ-017
+      - REQ-018
+      - REQ-019
+      - REQ-020
+      - REQ-021
+      - REQ-022
+      - REQ-023
+      - REQ-024
+      - REQ-025
+      - REQ-028
+      - REQ-029
+      - REQ-037
+      - REQ-038
+      - REQ-039
+      - REQ-041
+      - REQ-042
+      - REQ-043
+      - REQ-044
+      - REQ-045
+      - REQ-063
+      - REQ-064
+      - REQ-065
+      - REQ-068
+      - REQ-071
+      - REQ-072
+      - REQ-073
+      - REQ-074
+      - REQ-077
+      - REQ-078
+      - REQ-079
+      - REQ-080
+      - REQ-081
+      - REQ-082
+      - REQ-083
+      - REQ-084
+      - REQ-092
+      - REQ-094
+      - REQ-099
+      - REQ-107
+      - REQ-110
+      - REQ-111
+      - REQ-112
+      - REQ-113
+      - REQ-114
+      - REQ-115
+      security:
+      - SessionCookie: []
+      responses:
+        '204':
+          description: '성공: 이력서 전체 저장; 본문 없는 응답의 설계 제안'
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·삭제·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: 'INVALID_STRUCTURE: 구조 오류'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '413':
+          description: 'CONTENT_TOO_LARGE: content 200KB 초과'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ResourceId'
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResumeWrite'
+      x-no-response-data-reason: 원문은 저장 완료 후 GET·새로고침의 값 보존을 약속한다. 쓰기 결과 별도 데이터는 미명시; 204 응답은 OQ-012 미승인 제안.
+      x-business-rules:
+      - 본인·deleted=false인 resume만 저장하며 타인·삭제·없음은 404(REQ-002, REQ-060).
+      - content는 8종 type의 중복 없는 배열, 첫 원소는 hidden=false인 basics이다. 항목 최대20·태그30·links3과 필드 타입·template/style 허용값을
+        검사한다(REQ-004, REQ-005, REQ-007, REQ-008, REQ-077).
+      - content 200KB 초과는 413 CONTENT_TOO_LARGE; 바이트 산정은 OQ-003 확인 필요(REQ-020).
+      - 필수 누락·abc@·잘못된 날짜·역전 날짜는 서버 저장 거부 사유가 아니다(REQ-012, REQ-013).
+      - 1.5초 지연·동시 PUT 금지·후속 최신값 한 번 저장은 클라이언트 조정 책임이며 서버 version/lock 충돌 처리를 추가하지 않는다(REQ-020, REQ-021).
+      - 숨김은 data/items를 보관하며 순서 변경·섹션/항목 삭제·추가·복제는 전체 content 배열에 반영한다(REQ-014, REQ-041, REQ-043, REQ-044, REQ-063,
+        REQ-110, REQ-111, REQ-112, REQ-113).
+      - 사진 연결 삭제는 basics.data.photoId=null이며 photo DELETE를 추가하지 않는다(REQ-065).
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      - 'REQ-092/REQ-099: 영속 저장은 PostgreSQL 16.x를 사용한다. DB명·주소·계정은 OQ-013, patch/tag/digest는 OQ-014로 남긴다.'
+      - 'REQ-094: 실행·영속성 seed block은 파생 projection이며 독립 SSOT나 승인이 아니다. estimated:true·추정 — 사용자 미확인은 승인으로 처리하지 않으며
+        JPA/mybatis 충돌 OQ-001을 유지한다.'
+      - 'REQ-009/REQ-013: start/end/date는 YYYY.MM 입력 안내를 가진 문자열이다. 형식 오류·역전 날짜·잘못된 basics.email은 빨간 경고만 표시하고 그대로
+        저장한다.'
+      - 'REQ-010: experience/education.current=true이면 종료 입력은 비활성·미리보기는 현재, false이면 종료 입력은 활성이다. 서버는 current와 end를
+        저장하며 end 자동 삭제·보정 정책을 발명하지 않는다.'
+      - 'REQ-022/REQ-025: 입력 변경은 변경됨, 요청중 저장 중…, 성공 저장됨, 실패 저장 실패·다시 시도이다. 저장됨 외 상태의 새로고침·탭 닫기는 beforeunload 확인,
+        저장됨은 확인 대상이 아니다.'
+      - 'REQ-028/REQ-043/REQ-063: 섹션 삭제는 확인 후 items까지 제거하며 취소는 유지한다. 항목 삭제는 모달 없이 즉시 로컬 제거 후 전체 저장한다. 이력서 DELETE와
+        혼동하지 않는다.'
+      - 'REQ-045: 업무 내용·설명 Enter 시 프론트에서 "- "를 삽입하고 PUT은 그 문자열을 보존한다. REQ-046 글머리 렌더는 GET 데이터의 클라이언트 출력 책임이다.'
+      x-side-effects:
+      - resume.title/template/style/content 전체 편집값과 수정 시간을 명령 트랜잭션으로 저장한다(REQ-020).
+      - photoId 연결만 변경하며 photo 업로드 트랜잭션과 분리한다. 완성도는 서버·DB에 저장하지 않는다(REQ-018, REQ-064, REQ-065).
+      x-required-tests:
+      - 'happy: name 변경 후 1.5초 경과하여 전체 PUT 성공 -> GET의 resume.content.basics.data.name과 새로고침 입력값이 변경값이며 저장됨 표시'
+      - 'auth: 미로그인 PUT -> 401; 민준 resume를 지우로 PUT -> 404, 타인 content 불변'
+      - 'validation: basics.hidden=true·basics 부재·중복 type·21개 항목·31개 태그·4개 links 각각 PUT -> 400 INVALID_STRUCTURE의
+        field가 위반 배열/필드를 가리키며 이전 content 유지'
+      - 'business: 같은 type 두 개를 가진 content로 PUT(REQ-007) -> 400 INVALID_STRUCTURE, GET과 DB resume.content는 요청 전과
+        동일'
+      - 'side-effect: 섹션 hidden=true 저장 후 false 재저장 -> resume.content의 원래 data/items 보존; photoId=null 저장 후 GET은
+        null이고 완성도 DB 필드 없음'
+      - 'state: deleted=true 대상에 PUT -> 404, deleted와 content 불변; 정상 PUT은 deleted를 변경하지 않는다'
+      - 'sequence: 첫 PUT 응답 전 추가 입력 -> 동시 추가 PUT 0건, 첫 완료 후 최신 snapshot PUT 한 번, GET 최신값'
+      - 'navigation: 미저장 상태 목록 클릭 후 PUT 성공 -> 성공 후 목록·최신 썸네일; PUT 실패 -> 편집기 유지·토스트·저장됨 아님'
+      - 'retry: 저장 실패·다시 시도 클릭 후 PUT 성공 -> 저장됨과 GET 최신 content'
+      - 'export: 필수충족·1.5초 이내 PDF 클릭 후 PUT 성공 -> 완료 뒤 iframe GET의 최신 입력 인쇄; PUT 실패 -> 토스트·iframe/print 호출 없음'
+      - 'section-order: basics 이외 순서 변경 PUT -> GET content 배열 순서 일치(REQ-110)'
+      - 'section-hide: basics 이외 hidden toggle PUT -> GET hidden=true/false 일치(REQ-111)'
+      - 'section-delete: 섹션 삭제 확인 후 PUT -> GET type와 그 items 부재; 취소 -> PUT 삭제 요청 없이 type/items 유지(REQ-112, REQ-063)'
+      - 'section-add: 없는 type 추가 PUT -> GET에 해당 type 한 개 존재(REQ-113)'
+      - 'item: 항목 복제·추가·즉시삭제·정렬 각각 PUT -> GET에서 복제값·20개 상한·삭제 id 부재·배열 순서 일치; 복제 id 정책 OQ-006'
+      - 'style: template/color/font/size 변경 PUT -> GET 설정 일치와 content 불변, UI 색·페이지 수 갱신; pt 매핑 OQ-008'
+      - 'warning: 표시 basics.email=abc@·jobTitle="" 및 역전 날짜를 입력하고 PUT(REQ-009/REQ-011/REQ-012/REQ-013) -> GET에 문자열
+        그대로 보존·입력 아래 빨간 경고, 완성도/PDF 필수 검사에는 email/jobTitle 미충족이며 저장은 성공'
+      - 'current-on: 재직중·재학중 체크 후 PUT(REQ-010) -> GET current=true·종료 입력 비활성·미리보기 현재; 서버가 end 값을 임의 보정하지 않는다'
+      - 'current-off: current=true에서 체크 해제 후 PUT(REQ-010) -> GET current=false·종료 입력 활성'
+      - 'save-state: 편집기 입력 변경·PUT 진행·성공·실패 각각 발생(REQ-022) -> 변경됨·저장 중…·저장됨·저장 실패·다시 시도가 각 상태에 표시'
+      - 'leave-unsaved: 저장됨 외 상태에서 새로고침 및 탭 닫기 요청(REQ-025) -> beforeunload 확인 이벤트 관찰'
+      - 'leave-saved: PUT 완료로 저장됨 상태에서 새로고침 및 탭 닫기 요청(REQ-025) -> 미저장 beforeunload 확인을 등록하지 않음'
+      - 'section-cancel: 섹션 삭제 모달 취소(REQ-028/REQ-063) -> 해당 섹션 제거 PUT 없음·GET의 type와 items 유지'
+      - 'item-delete: 항목 삭제 클릭 후 저장(REQ-028/REQ-043) -> 확인 모달 없이 즉시 항목 제거·GET items에 대상 없음'
+      - 'description: 업무 내용에서 Enter를 누른 뒤 PUT(REQ-045) -> 다음 줄 "- " 자동 삽입·GET description 문자열 동일'
+      - 'toast: PUT 실패 또는 성공 결과 토스트 발생(REQ-029) -> 화면 하단 표시·3초 후 종료'
+      - 'pdf-missing: 작성 중인 이력서에서 PDF 내보내기(REQ-073/REQ-088) -> 기본정보 · 희망 직무 하나만 모달·클릭 시 해당 입력 포커스·iframe/window.print
+        호출 없음'
+      - 'pdf-date-warning: 필수값 충족·날짜 형식 또는 역전 경고 상태에서 PDF 내보내기(REQ-073/REQ-074) -> 날짜 경고만으로 차단되지 않고 저장 성공 후 iframe
+        인쇄'
+      - 'runtime-persistence: PostgreSQL16.x 환경에서 본인 content를 PUT하고 서버 재시작 후 GET(REQ-092/REQ-099/REQ-107) -> resume.content가
+        입력값과 동일; DB 연결/patch 선택 및 OQ-001 해결은 별도 확인 필요'
+      x-open-questions:
+      - 'OQ-003: 200KB 산정'
+      - 'OQ-005: photoId 참조 소유·고아·복제 정책'
+      - 'OQ-006: 항목 id와 상한 복제'
+      - 'OQ-008: size↔pt 매핑'
+      - 'OQ-009/OQ-012: envelope와 성공 응답 확인'
+      x-contract-status: clarification_required
+      description: 전체 title·template·style·content를 저장한다. 날짜·필수 이메일 경고와 필수 누락은 저장을 막지 않는다. current·hidden·순서·설명
+        문자열을 보존하며 섹션/항목 변경과 사진 연결을 지원한다. 완성도는 프론트 순수 함수로 계산하고 저장하지 않는다. 저장 상태·직렬 요청·이탈 확인·삭제 확인·토스트·PDF 직전 저장은 클라이언트
+        조정 책임이다. 실행 seed는 승인 근거가 아니며 영속성 충돌을 자동 해결하지 않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-004
+        title: 섹션 배열
+        statement: 본문은 basics, summary, experience, education, skills, projects, certificates, languages 8종 섹션 배열
+        acceptance_hint: 8종 저장·조회 및 기타 type INVALID_STRUCTURE; api_endpoint:PUT /api/resumes/{id}
+        source_locator: *id018
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-005
+        title: basics 고정
+        statement: basics 첫 번째, 이동·숨김·삭제 불가
+        acceptance_hint: 금지 버튼 없음 및 비첫번째·숨김 basics 저장 거부; api_endpoint:PUT /api/resumes/{id}
+        source_locator: *id019
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-007
+        title: 종류 중복 금지
+        statement: 같은 종류 하나만
+        acceptance_hint: 존재 type 추가 후보 없음, 중복 type 저장 거부; api_endpoint:PUT /api/resumes/{id}
+        source_locator: *id020
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-008
+        title: 개수 상한
+        statement: 항목형 섹션 최대 20개, 기술 태그 최대 30개
+        acceptance_hint: 20개 항목 추가 비활성, 21개 항목·31개 태그 저장 거부; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 33
+          quote: '- CMN-303: 항목형 섹션(경력·학력·프로젝트·자격증·어학)은 항목 최대 20개, 기술스택은 태그 최대 30개.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-009
+        title: 날짜 형식
+        statement: 날짜는 YYYY.MM 문자열
+        acceptance_hint: 잘못된 형식 빨간 경고, 저장은 허용
+        source_locator: *id021
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-010
+        title: 현재 상태
+        statement: 재직·재학중 체크 시 종료 비활성, 미리보기 현재
+        acceptance_hint: 체크는 비활성·현재, 해제는 종료란 활성
+        source_locator: *id022
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-011
+        title: 필수 판정
+        statement: basics 이름·희망 직무·이메일과 항목 첫 필드만 필수, 공백 제거 후 1자 이상, 이메일은 원문 정규식
+        acceptance_hint: 빈 jobTitle·abc@ 미충족, 선택 필드 빈 값은 위반 아님
+        source_locator: *id023
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-012
+        title: 필수 검사 경계
+        statement: 프론트에서 표시 섹션만 필수 검사, 완성도·PDF에만 사용
+        acceptance_hint: 숨긴 company 누락 제외 및 필수값 누락 자동저장 허용
+        source_locator: *id024
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-013
+        title: 경고와 저장 분리
+        statement: 이메일·날짜 형식·종료일<시작일은 입력 아래 빨간 경고만, 저장 허용
+        acceptance_hint: abc@ 및 역전 날짜 저장·재조회와 경고 표시; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 39
+          quote: '- CMN-313: 이메일 형식·날짜 형식·종료일<시작일은 입력란 아래 빨간 경고만 표시하고 저장은 막지 않는다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-014
+        title: 숨김 데이터 보관
+        statement: 숨김 섹션 데이터 보관, 입력 패널에 흐리게 유지
+        acceptance_hint: 다시 표시 시 원래 items 복원; api_endpoint:PUT /api/resumes/{id}
+        source_locator: *id025
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-015
+        title: 숨김 출력 제외
+        statement: 숨긴 섹션 미리보기·썸네일·PDF 제외
+        acceptance_hint: 세 출력에서 숨긴 경력 없음
+        source_locator: *id008
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-016
+        title: 숨김 평가 제외
+        statement: 숨긴 섹션 필수 검사·완성도에서 없는 것으로 취급
+        acceptance_hint: 숨긴 빈 company 누락 제외, 숨긴 본문·태그 가점 없음
+        source_locator: *id026
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-017
+        title: 완성도 점수
+        statement: 필수 모두 50, 자기소개 본문 10, 경력 또는 프로젝트 1개 이상 20, 태그 3개 이상 10, 사진 10, 충족 전부 아니면 0, 항목0개 필수충족
+        acceptance_hint: 지우 시드 90·90·0
+        source_locator: *id027
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-018
+        title: 완성도 즉시 비저장
+        statement: 프론트 순수 함수로 즉시 계산, 서버 저장 없음
+        acceptance_hint: 입력 직후 계산, PUT·DB에 완성도 저장 없음
+        source_locator: *id028
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-019
+        title: 완성도 색
+        statement: 50 미만 빨강, 80 미만 주황, 그 이상 초록
+        acceptance_hint: 0 빨강, 50 주황, 90 초록
+        source_locator: *id029
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-020
+        title: 1.5초 전체 저장
+        statement: 변경 1.5초 뒤 PUT 전체 저장
+        acceptance_hint: 저장 성공 뒤 새로고침 내용 유지; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 49
+          quote: '- CMN-341: 변경 후 1.5초 뒤 PUT으로 이력서 전체를 저장한다. 요청 중 변경이 생기면 끝난 뒤 한 번 더 저장한다(동시 요청 금지).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-021
+        title: 직렬 후속 저장
+        statement: 요청 중 변경은 끝난 뒤 한 번 더 저장, 동시 요청 금지
+        acceptance_hint: 진행 중 동시 요청 0건, 완료 후 최신 변경 저장1건; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 49
+          quote: '- CMN-341: 변경 후 1.5초 뒤 PUT으로 이력서 전체를 저장한다. 요청 중 변경이 생기면 끝난 뒤 한 번 더 저장한다(동시 요청 금지).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-022
+        title: 저장 상태
+        statement: 저장됨 / 변경됨 / 저장 중… / 저장 실패·다시 시도 표시
+        acceptance_hint: 변경·요청·성공·실패에 각각 문구 표시
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 50
+          quote: '- CMN-342: 툴바 저장 상태: 저장됨 / 변경됨 / 저장 중… / 저장 실패·다시 시도(클릭 시 재저장).'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-023
+        title: 저장 재시도
+        statement: 실패 상태 클릭 재저장
+        acceptance_hint: PUT 성공 후 저장됨 및 최신 값 재조회; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 50
+          quote: '- CMN-342: 툴바 저장 상태: 저장됨 / 변경됨 / 저장 중… / 저장 실패·다시 시도(클릭 시 재저장).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-024
+        title: 앱 이동 보호
+        statement: 저장됨 외 미저장 앱 이동 즉시 저장, 성공 후 이동, 실패 머물며 토스트
+        acceptance_hint: 목록 클릭 성공은 썸네일 반영, 실패는 편집기 유지; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 51
+          quote: '- CMN-343: 저장됨이 아닌 상태를 미저장이라 한다. [← 목록] 등 앱 내 이동은 즉시 저장 후 성공 시 이동, 실패 시 머물며 토스트. 새로고침·탭 닫기는 미저장이면
+            beforeunload 확인.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-025
+        title: 이탈 확인
+        statement: 미저장 새로고침·탭 닫기 beforeunload 확인
+        acceptance_hint: 미저장 이탈 확인, 저장됨은 확인 대상 아님
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 51
+          quote: '- CMN-343: 저장됨이 아닌 상태를 미저장이라 한다. [← 목록] 등 앱 내 이동은 즉시 저장 후 성공 시 이동, 실패 시 머물며 토스트. 새로고침·탭 닫기는 미저장이면
+            beforeunload 확인.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-028
+        title: 삭제 확인
+        statement: 이력서·섹션은 확인 모달, 항목 즉시
+        acceptance_hint: 확인 취소는 데이터 유지, 항목 삭제 모달 없음
+        source_locator: &id038
+          document: SPEC-REQUEST.md
+          line: 55
+          quote: '- CMN-702: 이력서·섹션 삭제는 확인 모달, 항목 삭제는 즉시. 결과·오류는 하단 토스트 3초.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-029
+        title: 토스트
+        statement: 결과·오류 하단 토스트 3초
+        acceptance_hint: 하단 표시 후 3초 종료
+        source_locator: &id037
+          document: SPEC-REQUEST.md
+          line: 55
+          quote: '- CMN-702: 이력서·섹션 삭제는 확인 모달, 항목 삭제는 즉시. 결과·오류는 하단 토스트 3초.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-037
+        title: 편집 툴바
+        statement: 목록·클릭 수정 제목·저장 상태·템플릿·스타일·PDF
+        acceptance_hint: 제목 수정 후 title 재조회, 버튼 구성 표시; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 111
+          quote: '- 툴바: [← 목록] 제목(클릭 수정) 저장 상태 | [템플릿·스타일] [PDF 내보내기]'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-038
+        title: 입력 패널
+        statement: 완성도·섹션 카드·없는 종류만 섹션 추가
+        acceptance_hint: 존재 type은 추가 후보 없음
+        source_locator: *id030
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-039
+        title: 카드 헤더
+        statement: 핸들·섹션명·항목 수·눈·휴지통·접기, basics 금지 조작 제외
+        acceptance_hint: basics 금지 요소 없음, 경력 항목 수 표시
+        source_locator: *id031
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-041
+        title: 항목 복제
+        statement: 항목 복제
+        acceptance_hint: 복제 항목 값 저장·재조회, id·상한 정책 OQ-006; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 114
+          quote: '- 항목: 접힌 요약 줄(첫 필드 · 둘째 필드 · 기간, 첫 필드가 비면 "(제목 없음)"), 클릭 시 펼침(한 번에 하나). [복제][삭제], [+ 항목 추가](20개면
+            비활성).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-042
+        title: 항목 추가
+        statement: 20개면 항목 추가 비활성
+        acceptance_hint: 19에서 추가 후20개·버튼 비활성; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 114
+          quote: '- 항목: 접힌 요약 줄(첫 필드 · 둘째 필드 · 기간, 첫 필드가 비면 "(제목 없음)"), 클릭 시 펼침(한 번에 하나). [복제][삭제], [+ 항목 추가](20개면
+            비활성).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-043
+        title: 항목 삭제
+        statement: 항목 삭제 즉시
+        acceptance_hint: 저장·재조회 items에서 삭제 항목 없음; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 114
+          quote: '- 항목: 접힌 요약 줄(첫 필드 · 둘째 필드 · 기간, 첫 필드가 비면 "(제목 없음)"), 클릭 시 펼침(한 번에 하나). [복제][삭제], [+ 항목 추가](20개면
+            비활성).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-044
+        title: 드래그 정렬
+        statement: 섹션·항목 드래그 즉시 반영
+        acceptance_hint: 미리보기·저장·재조회 배열 순서 동일; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 115
+          quote: '- 섹션·항목은 드래그로 순서를 바꾸고 미리보기에 즉시 반영한다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-045
+        title: 설명 입력
+        statement: Enter 시 - 자동 삽입
+        acceptance_hint: 다음 줄 - 시작 및 문자열 저장 유지
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 116
+          quote: '- 업무 내용·설명은 Enter 시 "- " 자동 삽입, 미리보기에서 "- " 줄은 글머리표.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-063
+        title: 섹션 삭제
+        statement: 확인 뒤 항목까지 삭제, 다시 추가 가능
+        acceptance_hint: 재조회 섹션·items 없음, 없는 종류 후보로 복귀; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 171
+          quote: '- 섹션 숨김은 CMN-321, 섹션 삭제는 확인 후 항목까지 삭제(다시 추가 가능).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-064
+        title: 사진 업로드·변경
+        statement: 클릭 즉시 업로드·변경·표시
+        acceptance_hint: POST photoId 연결 후 저장·재조회 사진 유지; api_endpoint:POST /api/photos; api_endpoint:PUT /api/resumes/{id}
+        source_locator: &id039
+          document: SPEC-REQUEST.md
+          line: 172
+          quote: '- 사진: 클릭 → 업로드 → 표시, [변경][삭제]. 오류 시 토스트, 기존 사진 유지.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-065
+        title: 사진 연결 삭제
+        statement: 삭제 photoId=null
+        acceptance_hint: 재조회 null·사진 미표시, photo 물리 삭제 요구 없음; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 172
+          quote: '- 사진: 클릭 → 업로드 → 표시, [변경][삭제]. 오류 시 토스트, 기존 사진 유지.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-068
+        title: 설정 즉시 반영
+        statement: 좌측 설정 클릭 즉시 반영·자동저장
+        acceptance_hint: template·style 재조회 동일 및 content 유지; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 189
+          quote: '- 좌측 패널 자리에 설정 패널을 연다. 클릭 즉시 반영, 자동저장 대상.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-071
+        title: 강조색
+        statement: '#1F3A5F, #2563EB, #0F766E, #9F1239, #C2410C, #374151'
+        acceptance_hint: FR-104 AC-02 제목·선·사이드바 동시 적용; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 192
+          quote: '- 강조색: #1F3A5F(네이비) #2563EB(블루) #0F766E #9F1239 #C2410C #374151(차콜)'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-072
+        title: 글꼴·크기
+        statement: Pretendard·Noto Serif KR 및9·10·11pt
+        acceptance_hint: FR-104 AC-03 총 N페이지 즉시 갱신, enum 대응 OQ-008; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 193
+          quote: '- 글꼴: Pretendard, Noto Serif KR. 글자 크기: 9·10·11pt.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-073
+        title: PDF 누락 모달
+        statement: 누락 모달 경력 2번째 · 회사명 형태, 클릭 포커스, 날짜경고 허용
+        acceptance_hint: FR-105 AC-01 작성 중 시드 기본정보 · 희망 직무 하나, 인쇄 없음
+        source_locator: *id032
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-074
+        title: PDF 직전 저장
+        statement: 미저장 즉시 저장, 실패 토스트 후 종료
+        acceptance_hint: FR-105 AC-02 1.5초 전 출력에도 최신 입력, 실패면 인쇄 없음; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 203
+          quote: '- DEC-106 절차. 빠진 항목 모달은 "경력 2번째 · 회사명" 형식, 클릭 시 해당 입력란 포커스. 날짜 경고는 막지 않는다.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-077
+        title: 기본정보 입력
+        statement: '기본정보: 이름*, 희망 직무*, 이메일*, 전화번호, 링크(라벨+URL) 최대 3, 사진'
+        acceptance_hint: name, jobTitle, email, phone, links(label,url) 최대3, photoId 편집·저장·재조회 일치; api_endpoint:PUT
+          /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 120
+          quote: '- 기본정보: 이름*, 희망 직무*, 이메일*, 전화번호, 링크(라벨+URL) 최대 3, 사진'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-078
+        title: 자기소개 입력
+        statement: '자기소개: 한 줄 소개, 본문(글자 수 표시)'
+        acceptance_hint: headline, body, 글자 수 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 121
+          quote: '- 자기소개: 한 줄 소개, 본문(글자 수 표시)'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-079
+        title: 경력 입력
+        statement: '경력: 회사명*, 직책, 시작, 종료, 재직중, 업무 내용'
+        acceptance_hint: company, position, start, end, current, description 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 122
+          quote: '- 경력: 회사명*, 직책, 시작, 종료, 재직중, 업무 내용'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-080
+        title: 학력 입력
+        statement: '학력: 학교명*, 전공, 학위, 시작, 종료, 재학중'
+        acceptance_hint: school, major, degree, start, end, current 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 123
+          quote: '- 학력: 학교명*, 전공, 학위, 시작, 종료, 재학중'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-081
+        title: 기술스택 입력
+        statement: '기술스택: 태그(Enter·쉼표로 추가, ×로 삭제, 중복 불가)'
+        acceptance_hint: Enter·쉼표 추가, × 삭제, 중복 금지 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 124
+          quote: '- 기술스택: 태그(Enter·쉼표로 추가, ×로 삭제, 중복 불가)'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-082
+        title: 프로젝트 입력
+        statement: '프로젝트: 프로젝트명*, 역할, 시작, 종료, 설명, 링크'
+        acceptance_hint: name, role, start, end, description, url 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 125
+          quote: '- 프로젝트: 프로젝트명*, 역할, 시작, 종료, 설명, 링크'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-083
+        title: 자격증 입력
+        statement: '자격증: 자격증명*, 발급기관, 취득일'
+        acceptance_hint: name, issuer, date 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 126
+          quote: '- 자격증: 자격증명*, 발급기관, 취득일'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-084
+        title: 어학 입력
+        statement: '어학: 언어*, 시험명, 점수'
+        acceptance_hint: language, test, score 편집·저장·재조회 일치; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 127
+          quote: '- 어학: 언어*, 시험명, 점수'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-092
+        title: Database 고정
+        statement: 'Database: PostgreSQL'
+        acceptance_hint: 'Database 고정: Database: PostgreSQL 실제 산출물·구성 확인'
+        source_locator: *id033
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-094
+        title: 실행 계약 보존
+        statement: 아래 block은 실행·영속성 seed contract(초기 계약)이자 projection(파생 투영물)이며 독립 SSOT가 아니다.
+        acceptance_hint: 원본 seed 보존 및 plan.md 정본, JPA/MyBatis 충돌 OQ-001 해결 전 build-ready 아님
+        source_locator: *id034
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-099
+        title: BOM postgres
+        statement: 'postgres: 16.x'
+        acceptance_hint: 'BOM postgres: postgres: 16.x 실제 산출물·구성 확인'
+        source_locator: *id035
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-107
+        title: migration 기준 필수
+        statement: DB 스키마 또는 migration 기준이 없으면 신규생성 구현은 불완전한 것으로 간주한다.
+        acceptance_hint: 'migration 기준 필수: DB 스키마 또는 migration 기준이 없으면 신규생성 구현은 불완전한 것으로 간주한다. 실제 산출물·구성 확인'
+        source_locator: *id036
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-110
+        title: 선택 섹션 순서 변경
+        statement: basics 이외 섹션 순서를 변경할 수 있다.
+        acceptance_hint: 선택 섹션의 변경 순서가 저장·재조회 content 배열에 유지된다.; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-111
+        title: 선택 섹션 숨김 변경
+        statement: basics 이외 섹션을 숨길 수 있다.
+        acceptance_hint: 해당 type.hidden=true가 저장·재조회되고 다시 표시하면 false가 유지된다.; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-112
+        title: 선택 섹션 삭제 명령
+        statement: basics 이외 섹션을 삭제할 수 있다.
+        acceptance_hint: 삭제한 type이 저장·재조회 content에 존재하지 않는다.; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-113
+        title: 선택 섹션 추가 명령
+        statement: basics 이외 없는 종류의 섹션을 추가할 수 있다.
+        acceptance_hint: 추가한 type이 저장·재조회 content에 한 개 존재한다.; api_endpoint:PUT /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 32
+          quote: '- CMN-302: basics는 항상 첫 번째이며 이동·숨김·삭제 불가. 나머지는 순서 변경·숨김·삭제·추가 가능. 같은 종류는 하나만.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-114
+        title: 에러 상태·코드 분류
+        statement: 미로그인 401과 로그인 이동, 없음·삭제·타인404, 입력·구조·지원 형식400, 중복 이메일409, 파일·content 크기413을 원문 코드로 구분한다.
+        acceptance_hint: 미로그인 보호 API는401·로그인 이동; 타인404; 사진 형식400·크기413; 중복가입409.; api_endpoint:GET /api/resumes/{id};
+          api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos; api_endpoint:POST /api/auth/signup
+        source_locator: *id016
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-115
+        title: 오류 필드 계약
+        statement: 오류 응답은 code, message, field를 포함하는 원문 형식을 보존한다.
+        acceptance_hint: 입력 오류 응답에서 code·message·field를 확인하고 원문 DUPLICATE_EMAIL 등 코드를 구분한다. envelope 정합성은 OQ-009.;
+          api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos;
+          api_endpoint:POST /api/auth/signup
+        source_locator: *id017
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      x-state-transitions:
+      - 본인·미삭제 resume -> 전체 편집값 저장·수정시간 갱신
+      - 선택 섹션 hidden=false <-> hidden=true; data/items 보존
+      - 연결 photoId=기존 id -> 신규 id 또는 null; 물리삭제 정책 OQ-005
+      - 클라이언트 변경됨 -> 저장 중… -> 성공 저장됨 / 실패 저장 실패·다시 시도; 동시 저장 요청 금지
+    patch:
+      operationId: renameResume
+      summary: 이력서 이름 변경
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-029
+      - REQ-057
+      - REQ-058
+      security:
+      - SessionCookie: []
+      responses:
+        '204':
+          description: '성공: 이력서 이름 변경; 본문 없는 응답의 설계 제안'
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·삭제·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: title 빈값 입력 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ResourceId'
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameResumeRequest'
+      x-no-response-data-reason: 이름 변경 결과는 후속 조회·카드 갱신으로 관찰한다. 204는 OQ-012 확인 전 설계 제안.
+      x-business-rules:
+      - 본인·미삭제 resume.title만 변경한다(REQ-002, REQ-057).
+      - 빈 title은 거부하고 기존 title 유지; 공백-only와 길이 상한은 OQ-003(REQ-058).
+      x-side-effects:
+      - resume.title과 수정 시간을 저장하여 카드·후속 GET에 반영한다(REQ-057).
+      - content·template·style은 이름 변경 명령으로 바꾸지 않는다(REQ-057의 title 범위).
+      x-required-tests:
+      - 'happy: 본인 title을 새 제목으로 PATCH -> GET과 목록 카드에 새 title 표시'
+      - 'auth: 미로그인 PATCH -> 401; 타인 PATCH -> 404, 타인 title 불변'
+      - 'validation: title="" PATCH -> 400 field=title, 기존 title 유지'
+      - 'business: deleted=true 이력서 이름 변경 -> 404, deleted와 title 불변'
+      - 'side-effect: 정상 PATCH 전후 resume 비교 -> title·수정시간 반영, content/template/style 동일'
+      x-open-questions:
+      - 'OQ-003: 공백-only와 최대 길이'
+      - 'OQ-009/OQ-012: envelope와 응답'
+      x-contract-status: clarification_required
+      description: 본인·미삭제 resume.title을 변경한다. 카드 갱신·3초 토스트를 지원하며 공백-only 및 최대 길이 정책은 OQ-003이다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-029
+        title: 토스트
+        statement: 결과·오류 하단 토스트 3초
+        acceptance_hint: 하단 표시 후 3초 종료
+        source_locator: *id037
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-057
+        title: 이름 변경
+        statement: 이름 변경
+        acceptance_hint: PATCH 후 카드·재조회 title 변경; api_endpoint:PATCH /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 156
+          quote: '- 카드: 썸네일, 제목, 수정 시간. 클릭 시 편집기. [⋯]: 이름 변경(빈 값 불가), 복제(" (사본)"), 삭제(확인 모달).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-058
+        title: 빈 이름 거부
+        statement: 이름 빈 값 불가
+        acceptance_hint: 거부·원래 title 유지, 공백판정 OQ-003; api_endpoint:PATCH /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 156
+          quote: '- 카드: 썸네일, 제목, 수정 시간. 클릭 시 편집기. [⋯]: 이름 변경(빈 값 불가), 복제(" (사본)"), 삭제(확인 모달).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      x-state-transitions:
+      - 본인·미삭제 resume.title=기존 제목 -> 유효 새 제목; 빈 제목 거부 시 기존 제목 유지
+    delete:
+      operationId: deleteResume
+      summary: 이력서 삭제
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-028
+      - REQ-029
+      - REQ-060
+      security:
+      - SessionCookie: []
+      responses:
+        '204':
+          description: '성공: 이력서 삭제; 본문 없는 응답의 설계 제안'
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·삭제·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ResourceId'
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      x-no-request-body-reason: path id와 현재 세션으로 soft delete한다. 사용자 확인은 UI 동작이며 추가 body 필드는 원문 미명시.
+      x-no-response-data-reason: 삭제 결과는 DB deleted 값·목록 제외·후속404로 관찰한다. 본문 없는204는 OQ-012 미승인 제안.
+      x-business-rules:
+      - 사용자가 확인한 본인·미삭제 이력서를 deleted=true로 저장한다(REQ-060). 확인 취소는 클라이언트에서 요청하지 않는다(REQ-028).
+      - 삭제 후 목록 제외 및 모든 후속 접근404; 복구·휴지통을 추가하지 않는다(REQ-060, REQ-003).
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      x-side-effects:
+      - resume.deleted=true를 보존하고 물리 행은 soft delete 상태로 남긴다(REQ-060).
+      - 목록에서 삭제 id가 사라진다. photo의 cascade/보관 정책은 OQ-005이므로 삭제 효과로 확정하지 않는다.
+      x-required-tests:
+      - 'happy: 본인 이력서 삭제 확인 후 DELETE -> resume.deleted=true, GET 목록에 id 없음·GET 단건404'
+      - 'auth: 미로그인 DELETE -> 401; 타인 DELETE -> 404, 타인 deleted=false 불변'
+      - 'validation: 없는 id DELETE -> 404, 기존 resume 행 불변'
+      - 'business: 이미 deleted=true인 id에 GET/PUT/PATCH/duplicate/DELETE -> 각각404, content 불변'
+      - 'side-effect: 삭제 성공 -> resume 물리 id 존재·deleted=true이고 본인 목록에서 제외; 사진 물리정리는 OQ-005'
+      - 'cancel: 삭제 확인 모달 취소 -> DELETE 호출 없음·resume.deleted=false·카드 유지'
+      x-state-transitions:
+      - resume.deleted=false -> resume.deleted=true
+      x-open-questions:
+      - 'OQ-005: 사진 보관·cascade'
+      - 'OQ-012: 204 응답 승인'
+      x-contract-status: clarification_required
+      description: 확인한 본인 이력서의 resume.deleted를 true로 바꾼다. 확인 취소는 요청을 보내지 않는다. 휴지통·복구 API를 만들지 않으며 사진 보관 정책은 OQ-005로
+        남긴다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-028
+        title: 삭제 확인
+        statement: 이력서·섹션은 확인 모달, 항목 즉시
+        acceptance_hint: 확인 취소는 데이터 유지, 항목 삭제 모달 없음
+        source_locator: *id038
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-029
+        title: 토스트
+        statement: 결과·오류 하단 토스트 3초
+        acceptance_hint: 하단 표시 후 3초 종료
+        source_locator: *id037
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-060
+        title: 이력서 삭제
+        statement: 확인 후 삭제
+        acceptance_hint: resume.deleted=true, 목록 미노출·이후404, 취소 유지; api_endpoint:DELETE /api/resumes/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 156
+          quote: '- 카드: 썸네일, 제목, 수정 시간. 클릭 시 편집기. [⋯]: 이름 변경(빈 값 불가), 복제(" (사본)"), 삭제(확인 모달).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+  /api/resumes/{id}/duplicate:
+    post:
+      operationId: duplicateResume
+      summary: 이력서 복제
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-003
+      - REQ-059
+      security:
+      - SessionCookie: []
+      responses:
+        '201':
+          description: '성공: 이력서 복제'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/CreatedResume'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·삭제·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ResourceId'
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      x-no-request-body-reason: 원본 id는 path로 지정한다. 원문 복제는 추가 사용자 입력을 요구하지 않는다.
+      x-business-rules:
+      - 본인·미삭제 원본만 복제한다(REQ-002, REQ-059).
+      - 새 title은 원본 title 뒤 " (사본)"이며 content/template/style은 원본과 동일하다(REQ-059).
+      - 사진 포함 복제의 photoId/bytea 보관·재사용 정책은 OQ-005 확인 필요; 사진 없는 원문 시드의 동일 content 시험은 가능하다.
+      - 'REQ-003: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소는 제외한다. 리소스 API를 이 기능들로
+        확장하지 않는다.'
+      x-side-effects:
+      - 원본을 유지하면서 현재 사용자 소유 새 resume 행을 저장한다(REQ-059).
+      - 새 id를 목록에서 재조회할 수 있으며 버전 이력 행은 생성하지 않는다(REQ-003, REQ-059).
+      x-required-tests:
+      - 'happy: 사진 없는 본인 시드 복제 -> 새 id GET의 content/template/style이 원본과 동일하고 title에 " (사본)" 추가'
+      - 'auth: 세션 없이 복제 -> 401; 타인 원본 복제 -> 404, 새 resume 없음'
+      - 'validation: 존재하지 않는 id 복제 -> 404, resume 행수 불변; 추가 입력 없는 동작이다'
+      - 'business: deleted=true 원본 복제 -> 404, 삭제 원본 불변·새 사본 없음'
+      - 'side-effect: 복제 성공 -> 본인 resume 행수가 한 개 증가, 원본 id/content 불변, 목록에 새 id 조회'
+      x-open-questions:
+      - 'OQ-005: 사진 있는 사본 처리'
+      - 'OQ-012: 201·id 응답 제안'
+      x-contract-status: clarification_required
+      description: 원본을 유지하고 본인 새 resume 행을 만든다. title에 " (사본)"을 붙이고 content·template·style을 복사한다. 사진 있는 복제와 항목 단위
+        복제의 정책을 혼동하지 않는다.
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-003
+        title: 제외 범위
+        statement: 권한·관리자, 공유 링크, 버전 기록, 휴지통, 사진 자르기, 실행 취소, 소셜 로그인, 동시 편집 충돌 처리, 브라우저 저장소 제외
+        acceptance_hint: 제외 목록 기능을 제품 기능으로 생성하지 않음
+        source_locator: *id002
+        responsibility: '범위 제약: 해당 리소스 조작에 제외 기능을 추가하지 않는다.'
+      - canonical_id: REQ-059
+        title: 이력서 복제
+        statement: 복제 제목 (사본) 추가
+        acceptance_hint: FR-102 AC-02 content·template·style 동일, 사진 OQ-005; api_endpoint:POST /api/resumes/{id}/duplicate
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 156
+          quote: '- 카드: 썸네일, 제목, 수정 시간. 클릭 시 편집기. [⋯]: 이름 변경(빈 값 불가), 복제(" (사본)"), 삭제(확인 모달).'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      x-state-transitions:
+      - 본인·미삭제 원본만 존재 -> 원본 불변·새 id 사본 추가; 삭제/타인 원본은404·사본 미생성
+  /api/photos:
+    post:
+      operationId: uploadPhoto
+      summary: 이력서 사진 업로드
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-029
+      - REQ-030
+      - REQ-031
+      - REQ-033
+      - REQ-064
+      - REQ-066
+      - REQ-114
+      - REQ-115
+      security:
+      - SessionCookie: []
+      responses:
+        '201':
+          description: '성공: 이력서 사진 업로드'
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/ApiResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/UploadedPhoto'
+                  required:
+                  - data
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: UNSUPPORTED_FILE_TYPE 또는 입력 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '413':
+          description: 'FILE_TOO_LARGE: 2MB 초과'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      x-business-rules:
+      - JPG·PNG이며 2MB 이하 파일만 업로드한다; MB 바이트 기준은 OQ-005(REQ-030).
+      - 현재 사용자 소유 photo.data bytea로 저장하여 photoId를 반환한다(REQ-031, REQ-064).
+      - 이력서당 현재 연결 사진은 basics.data.photoId 한 개이다. 업로드 성공 후 PUT으로 연결하며 업로드 오류 시 기존 photoId를 유지한다(REQ-030, REQ-064,
+        REQ-066).
+      x-side-effects:
+      - photo에 UUID id·현재 user_id·content_type·원본 data·created_at을 저장한다(REQ-031).
+      - photoId 반환 후 클라이언트가 별도 PUT으로 resume.content에 연결한다. POST 단독으로 기존 resume/photo를 삭제하지 않는다(REQ-064, REQ-066).
+      x-required-tests:
+      - 'happy: 로그인하여 2MB 이하 JPG 업로드 -> 응답 data.photoId로 GET하면 원본 bytes와 동일, 연결 PUT 후 GET resume의 photoId 동일'
+      - 'auth: 미로그인 업로드 -> 401, photo 신규 행 없음; 다른 사용자로 새 photoId GET -> 404'
+      - 'validation: GIF 업로드 -> 400 UNSUPPORTED_FILE_TYPE·field가 파일 입력을 가리킴; 2MB 초과 JPG -> 413 FILE_TOO_LARGE, 기존
+        photoId 유지'
+      - 'business: 기존 사진이 있는 이력서에서 미지원 파일로 변경 -> 업로드 오류·토스트, resume.content.basics.data.photoId와 기존 사진 표시 불변'
+      - 'side-effect: 정상 PNG 업로드 -> photo.data가 원본bytes, content_type=image/png, user_id가 현재 사용자이며 별도 PUT 전 resume.content
+        불변'
+      x-open-questions:
+      - 'OQ-005: MB 기준·교체 후 고아 행·파일 검사 방식'
+      - 'OQ-012: multipart 필드 이름은 설계 후보 file; 확인 필요'
+      x-contract-status: clarification_required
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPG/PNG·2MB 이하; maxLength 바이트값은 MB 기준 미정이므로 지정하지 않는다.
+              required:
+              - file
+            encoding:
+              file:
+                contentType: image/jpeg, image/png
+      description: '본인 photo.data bytea 저장과 photoId 반환을 수행한다. 사진 연결은 후속 전체 PUT으로 저장한다. 오류 시 기존 연결·사진 표시를 보존하며 UI는
+        하단 3초 토스트와 3:4 object-fit: cover 표시를 적용한다.'
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-029
+        title: 토스트
+        statement: 결과·오류 하단 토스트 3초
+        acceptance_hint: 하단 표시 후 3초 종료
+        source_locator: *id037
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-030
+        title: 사진 제한
+        statement: JPG·PNG 2MB 이하 이력서당1장
+        acceptance_hint: 미지원400 UNSUPPORTED_FILE_TYPE, 초과413 FILE_TOO_LARGE; api_endpoint:POST /api/photos
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 58
+          quote: '- CMN-801: JPG·PNG, 2MB 이하, 이력서당 1장. photo 테이블 bytea에 저장하고 GET /api/photos/{id}로 본인 것만 제공. 3:4
+            영역에 object-fit: cover.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-031
+        title: 사진 보관
+        statement: photo.data bytea 저장
+        acceptance_hint: 원본 바이너리 저장 및 photoId로 재조회; api_endpoint:POST /api/photos
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 58
+          quote: '- CMN-801: JPG·PNG, 2MB 이하, 이력서당 1장. photo 테이블 bytea에 저장하고 GET /api/photos/{id}로 본인 것만 제공. 3:4
+            영역에 object-fit: cover.'
+        responsibility: 영속 데이터 또는 시드의 저장·조회 검증 근거.
+      - canonical_id: REQ-033
+        title: 사진 영역
+        statement: '3:4 object-fit: cover'
+        acceptance_hint: 렌더 영역 비율·속성 확인
+        source_locator: &id040
+          document: SPEC-REQUEST.md
+          line: 58
+          quote: '- CMN-801: JPG·PNG, 2MB 이하, 이력서당 1장. photo 테이블 bytea에 저장하고 GET /api/photos/{id}로 본인 것만 제공. 3:4
+            영역에 object-fit: cover.'
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-064
+        title: 사진 업로드·변경
+        statement: 클릭 즉시 업로드·변경·표시
+        acceptance_hint: POST photoId 연결 후 저장·재조회 사진 유지; api_endpoint:POST /api/photos; api_endpoint:PUT /api/resumes/{id}
+        source_locator: *id039
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-066
+        title: 사진 실패 유지
+        statement: 오류 토스트·기존 사진 유지
+        acceptance_hint: 400·413 후 기존 photoId·사진 불변; api_endpoint:POST /api/photos
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 172
+          quote: '- 사진: 클릭 → 업로드 → 표시, [변경][삭제]. 오류 시 토스트, 기존 사진 유지.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-114
+        title: 에러 상태·코드 분류
+        statement: 미로그인 401과 로그인 이동, 없음·삭제·타인404, 입력·구조·지원 형식400, 중복 이메일409, 파일·content 크기413을 원문 코드로 구분한다.
+        acceptance_hint: 미로그인 보호 API는401·로그인 이동; 타인404; 사진 형식400·크기413; 중복가입409.; api_endpoint:GET /api/resumes/{id};
+          api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos; api_endpoint:POST /api/auth/signup
+        source_locator: *id016
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-115
+        title: 오류 필드 계약
+        statement: 오류 응답은 code, message, field를 포함하는 원문 형식을 보존한다.
+        acceptance_hint: 입력 오류 응답에서 code·message·field를 확인하고 원문 DUPLICATE_EMAIL 등 코드를 구분한다. envelope 정합성은 OQ-009.;
+          api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT /api/resumes/{id}; api_endpoint:POST /api/photos;
+          api_endpoint:POST /api/auth/signup
+        source_locator: *id017
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      x-state-transitions:
+      - 본인 업로드 성공 -> 새 photo 저장·photoId 반환; resume 연결은 후속 PUT 성공 후 변경
+      - 미지원/크기 초과 ->400/413·기존 resume photoId 불변
+  /api/photos/{id}:
+    get:
+      operationId: getPhoto
+      summary: 본인 사진 조회
+      x-related-requirements:
+      - REQ-001
+      - REQ-002
+      - REQ-032
+      - REQ-033
+      security:
+      - SessionCookie: []
+      responses:
+        '200':
+          description: 본인 photo.data 원본 bytes; 저장된 content_type 사용
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: 미로그인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 없음·타인
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-roles:
+      - 로그인 사용자(역할 구분 없음)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: 조회·명령 대상 식별자; 요청 사용자 소유 여부를 별도 검사한다.
+      description: '본인 photo의 원본 바이너리를 반환한다. 3:4 object-fit: cover는 클라이언트 표시 계약이며 서버 자르기 기능이 아니다.'
+      x-requirement-evidence:
+      - canonical_id: REQ-001
+        title: 이용 범위
+        statement: 역할·권한 없이 로그인 사용자는 모든 기능, 비로그인은 로그인·회원가입만 본다
+        acceptance_hint: 비로그인 /resumes는 /login, 로그인은 모든 포함 기능 이용
+        source_locator: *id001
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      - canonical_id: REQ-002
+        title: 자기 데이터
+        statement: 자기 이력서·사진만 조회·수정, 타인은 404
+        acceptance_hint: 본인 GET 성공·타인 GET/PUT 404 및 타인 내용 불변; api_endpoint:GET /api/resumes/{id}; api_endpoint:PUT
+          /api/resumes/{id}; api_endpoint:GET /api/photos/{id}
+        source_locator: *id007
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-032
+        title: 사진 제공
+        statement: 본인 사진 GET /api/photos/{id}
+        acceptance_hint: 본인 바이너리 조회, 타인404; api_endpoint:GET /api/photos/{id}
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 58
+          quote: '- CMN-801: JPG·PNG, 2MB 이하, 이력서당 1장. photo 테이블 bytea에 저장하고 GET /api/photos/{id}로 본인 것만 제공. 3:4
+            영역에 object-fit: cover.'
+        responsibility: 해당 리소스의 HTTP 동작 또는 후속 조회·검증 근거.
+      - canonical_id: REQ-033
+        title: 사진 영역
+        statement: '3:4 object-fit: cover'
+        acceptance_hint: 렌더 영역 비율·속성 확인
+        source_locator: *id040
+        responsibility: 이 operation의 데이터·세션·저장 결과를 사용하는 클라이언트 계약. 로컬 동작을 새 서버 operation으로 만들지 않는다.
+      x-business-rules:
+      - 'REQ-002/REQ-032: 본인 사진만 제공하며 없음·타인은404이다.'
+      - 'REQ-033: 반환 바이너리를 3:4 object-fit: cover 영역에 표시하고 서버 자르기를 추가하지 않는다.'
+      x-side-effects:
+      - 바이너리 조회로 photo.data를 수정하거나 새 photo를 생성하지 않는다.
+      x-required-tests:
+      - 'happy: 본인 photo.id GET(REQ-032) ->저장된 content_type과 원본 bytes 반환'
+      - 'auth: 미로그인/타인 사진 GET(REQ-001/REQ-002) ->각각401/404'
+      - 'render: GET 사진을 편집기/렌더러에 표시(REQ-033) ->영역3:4·object-fit: cover, 서버 crop 요청 없음'
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: 서비스 기동 확인
+      x-related-requirements:
+      - REQ-090
+      - REQ-091
+      - REQ-093
+      - REQ-095
+      - REQ-096
+      - REQ-097
+      - REQ-098
+      - REQ-100
+      - REQ-101
+      - REQ-102
+      - REQ-103
+      - REQ-105
+      - REQ-108
+      - REQ-109
+      security: []
+      responses:
+        '200':
+          description: 기동된 서비스의 HTTP 200; 원문 응답 본문 미명시
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      x-open-questions:
+      - REQ-103은 HTTP200만 요구한다. 반환 본문·DB readiness 판정 기준은 미명시; 임의 status/healthy JSON을 만들지 않는다.
+      description: REQ-103이 명시한 /api/health 기동 확인이다. Compose/BOM/산출물/build context 제약은 이 operation의 실행·검증 환경에 연결한다.
+        HTTP 200만으로 PostgreSQL·마이그레이션·화면 검증이나 build context 준수를 증명하지 않으며 별도 검증 조건을 실행해야 한다.
+      x-requirement-evidence:
+      - canonical_id: REQ-090
+        title: Frontend 고정
+        statement: 'Frontend: React + TypeScript + Vite'
+        acceptance_hint: 'Frontend 고정: Frontend: React + TypeScript + Vite 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 229
+          quote: '- Frontend: React + TypeScript + Vite'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-091
+        title: Backend 고정
+        statement: 'Backend: Java 17 + Spring Boot'
+        acceptance_hint: 'Backend 고정: Backend: Java 17 + Spring Boot 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 230
+          quote: '- Backend: Java 17 + Spring Boot'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-093
+        title: Infrastructure 고정
+        statement: 'Infrastructure: Docker Compose'
+        acceptance_hint: 'Infrastructure 고정: Infrastructure: Docker Compose 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 232
+          quote: '- Infrastructure: Docker Compose'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-095
+        title: BOM spring_boot
+        statement: 'spring_boot: 3.3.x'
+        acceptance_hint: 'BOM spring_boot: spring_boot: 3.3.x 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 256
+          quote: '- spring_boot: 3.3.x'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-096
+        title: BOM node
+        statement: 'node: 20.x'
+        acceptance_hint: 'BOM node: node: 20.x 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 257
+          quote: '- node: 20.x'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-097
+        title: BOM vite
+        statement: 'vite: 5.x'
+        acceptance_hint: 'BOM vite: vite: 5.x 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 258
+          quote: '- vite: 5.x
+
+            - react: 18.x'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-098
+        title: BOM react
+        statement: 'react: 18.x'
+        acceptance_hint: 'BOM react: react: 18.x 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 259
+          quote: '- react: 18.x'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-100
+        title: 산출물 backend_dir
+        statement: 'backend_dir: backend'
+        acceptance_hint: '산출물 backend_dir: backend_dir: backend 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 263
+          quote: '- backend_dir: backend'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-101
+        title: 산출물 frontend_dir
+        statement: 'frontend_dir: frontend'
+        acceptance_hint: '산출물 frontend_dir: frontend_dir: frontend 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 264
+          quote: '- frontend_dir: frontend'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-102
+        title: 산출물 compose_file
+        statement: 'compose_file: infra/docker-compose.yml'
+        acceptance_hint: '산출물 compose_file: compose_file: infra/docker-compose.yml 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 265
+          quote: '- compose_file: infra/docker-compose.yml'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-103
+        title: 산출물 health_endpoint
+        statement: 'health_endpoint: /api/health'
+        acceptance_hint: '산출물 health_endpoint: health_endpoint: /api/health 실제 산출물·구성 확인; api_endpoint:GET /api/health'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 266
+          quote: '- health_endpoint: /api/health'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-105
+        title: Backend 변경 필수
+        statement: backend/ 변경이 없으면 신규생성 구현은 불완전한 것으로 간주한다.
+        acceptance_hint: 'Backend 변경 필수: backend/ 변경이 없으면 신규생성 구현은 불완전한 것으로 간주한다. 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 282
+          quote: '- backend/ 변경이 없으면 신규생성 구현은 불완전한 것으로 간주한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-108
+        title: API·화면 통합 검증
+        statement: preview 또는 quickstart 검증에서 backend API와 frontend 화면을 함께 확인한다.
+        acceptance_hint: preview 또는 quickstart 동일 환경에서 화면과 API 결과 확인
+        source_locator: *id015
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      - canonical_id: REQ-109
+        title: Docker build context 제외
+        statement: 'compose 의 각 build context 디렉터리(예: context: .. 는 저장소 루트)에 .dockerignore 를 두고 node_modules, .git,
+          dist, build, .next, coverage 를 제외한다.'
+        acceptance_hint: 'Docker build context 제외: compose 의 각 build context 디렉터리(예: context: .. 는 저장소 루트)에 .dockerignore
+          를 두고 node_modules, .git, dist, build, .next, coverage 를 제외한다. 실제 산출물·구성 확인'
+        source_locator:
+          document: SPEC-REQUEST.md
+          line: 286
+          quote: '- compose 의 각 build context 디렉터리(예: context: .. 는 저장소 루트)에 .dockerignore 를 두고 node_modules, .git,
+            dist, build, .next, coverage 를 제외한다.'
+        responsibility: '구현·실행 또는 통합 검증 제약: HTTP 응답만으로 충족을 판정하지 않는다.'
+      x-business-rules:
+      - 'REQ-103: 기동 확인 path는 /api/health이며 제품 화면이나 임의 DB readiness 결과를 만들지 않는다.'
+      - 'REQ-108/REQ-109: 실제 backend API와 frontend 화면을 같은 preview/quickstart에서 확인하고 Compose의 각 build context에 .dockerignore로
+        node_modules, .git, dist, build, .next, coverage를 제외한다. HTTP200이 이 검증을 대체하지 않는다.'
+      x-side-effects:
+      - 서비스 기동 상태를 읽으며 업무 데이터 행을 생성·수정하지 않는다.
+      x-no-response-data-reason: REQ-103은 HTTP200 기동 확인만 요구한다. 업무 결과 데이터·DB readiness 본문은 미명시이므로 data/status/healthy
+        필드를 발명하지 않는다. 공통 envelope의 success/meta만 선언한다.
+      x-required-tests:
+      - 'startup: Compose 기동 완료 후 GET /api/health(REQ-103) ->HTTP200 및 success=true/meta 객체, 업무 data 발명 없음'
+      - 'runtime: 실행 산출물의 기술/BOM을 확인(REQ-090/REQ-091/REQ-095/REQ-096/REQ-097/REQ-098) ->React18.x·TypeScript·Vite5.x·Node20.x·Java17·Spring
+        Boot3.3.x 일치'
+      - 'delivery: Docker Compose 구성과 산출물 경로 대조(REQ-093/REQ-100/REQ-101/REQ-102/REQ-105) ->backend/·frontend/·infra/docker-compose.yml
+        존재·backend 실제 구현 변경 존재·3서비스 healthcheck 확인'
+      - 'build-context: Compose의 각 build context 디렉터리 확인(REQ-109) ->그 위치의 .dockerignore가 node_modules/.git/dist/build/.next/coverage를
+        제외, context: ..를 실제 고정 경로로 추정하지 않음'
+      - 'integration: 같은 preview/quickstart에서 backend 보호 API와 frontend 화면 확인(REQ-108) ->인증된 본인 API 데이터와 표시된 카드/폼
+        일치·health200만으로 통합 성공 판정하지 않음'
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: Spring Security 세션 cookie 이름의 설계 후보. 실제 이름·SameSite·Secure·HttpOnly·CSRF·만료는 OQ-004 확인 필요; 보안
+        비활성을 의미하지 않는다.
+  schemas:
+    SectionType:
+      type: string
+      enum:
+      - basics
+      - summary
+      - experience
+      - education
+      - skills
+      - projects
+      - certificates
+      - languages
+    Template:
+      type: string
+      enum:
+      - classic
+      - modern
+    StyleColor:
+      type: string
+      enum:
+      - '#1F3A5F'
+      - '#2563EB'
+      - '#0F766E'
+      - '#9F1239'
+      - '#C2410C'
+      - '#374151'
+    StyleFont:
+      type: string
+      enum:
+      - pretendard
+      - noto-serif-kr
+    StyleSize:
+      type: string
+      enum:
+      - small
+      - medium
+      - large
+    Degree:
+      type: string
+      enum:
+      - 고졸
+      - 학사
+      - 석사
+      - 박사
+      - ''
+    ResourceId:
+      type: string
+      description: users.id·resume.id의 불투명 HTTP 식별자 표현 제안. DB 타입·생성 전략은 OQ-DATA-001 확인 필요; UUID나 숫자로 확정하지 않는다.
+    Meta:
+      type: object
+      description: 공통 envelope 필수 객체. 내부 키·추적 ID·페이지 정보는 OQ-009/OQ-010 확인 전 확정하지 않는다.
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          const: true
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required:
+      - success
+      - meta
+    ApiError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          const: false
+        meta:
+          $ref: '#/components/schemas/Meta'
+        code:
+          type: string
+        message:
+          type: string
+        field:
+          type:
+          - string
+          - 'null'
+          description: 원문 field 보존; 비필드 오류의 null 표현은 OQ-009 미승인 제안이다.
+      required:
+      - success
+      - meta
+      - code
+      - message
+      - field
+      description: 원문 code/message/field를 최상위에 유지하는 envelope 설계 제안; OQ-009 확인 전 구현 정본으로 승인하지 않는다.
+    Link:
+      type: object
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+      required:
+      - label
+      - url
+    BasicsData:
+      type: object
+      properties:
+        name:
+          type: string
+        jobTitle:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        links:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/Link'
+        photoId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      required:
+      - name
+      - jobTitle
+      - email
+      - phone
+      - links
+      - photoId
+      description: 필드 존재와 타입만 구조 검증한다. name·jobTitle·email의 빈값 및 잘못된 email 형식을 저장 거부 사유로 사용하지 않는다.
+    SummaryData:
+      type: object
+      properties:
+        headline:
+          type: string
+        body:
+          type: string
+      required:
+      - headline
+      - body
+    SkillsData:
+      type: object
+      properties:
+        tags:
+          type: array
+          maxItems: 30
+          items:
+            type: string
+      required:
+      - tags
+      description: 태그 중복 방지는 REQ-081의 프론트 입력 규칙. 서버 검증에 추가로 확대할지는 확인 필요.
+    ExperienceItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 항목 식별자 문자열; 생성·복제 정책 OQ-006 확인 필요.
+        company:
+          type: string
+        position:
+          type: string
+        start:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        end:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        current:
+          type: boolean
+        description:
+          type: string
+      required:
+      - id
+      - company
+      - position
+      - start
+      - end
+      - current
+      - description
+    EducationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 항목 식별자 문자열; 생성·복제 정책 OQ-006 확인 필요.
+        school:
+          type: string
+        major:
+          type: string
+        degree:
+          $ref: '#/components/schemas/Degree'
+        start:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        end:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        current:
+          type: boolean
+      required:
+      - id
+      - school
+      - major
+      - degree
+      - start
+      - end
+      - current
+    ProjectItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 항목 식별자 문자열; 생성·복제 정책 OQ-006 확인 필요.
+        name:
+          type: string
+        role:
+          type: string
+        start:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        end:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+        description:
+          type: string
+        url:
+          type: string
+      required:
+      - id
+      - name
+      - role
+      - start
+      - end
+      - description
+      - url
+    CertificateItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 항목 식별자 문자열; 생성·복제 정책 OQ-006 확인 필요.
+        name:
+          type: string
+        issuer:
+          type: string
+        date:
+          type: string
+          description: YYYY.MM 입력 안내. 저장 API는 형식·기간 선후 검증을 하지 않고 문자열을 보존한다.
+      required:
+      - id
+      - name
+      - issuer
+      - date
+    LanguageItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 항목 식별자 문자열; 생성·복제 정책 OQ-006 확인 필요.
+        language:
+          type: string
+        test:
+          type: string
+        score:
+          type: string
+      required:
+      - id
+      - language
+      - test
+      - score
+    BasicsSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: basics
+        hidden:
+          type: boolean
+          const: false
+        data:
+          $ref: '#/components/schemas/BasicsData'
+      required:
+      - type
+      - hidden
+      - data
+    SummarySection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: summary
+        hidden:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/SummaryData'
+      required:
+      - type
+      - hidden
+      - data
+    SkillsSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: skills
+        hidden:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/SkillsData'
+      required:
+      - type
+      - hidden
+      - data
+    ExperienceSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: experience
+        hidden:
+          type: boolean
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ExperienceItem'
+      required:
+      - type
+      - hidden
+      - items
+    EducationSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: education
+        hidden:
+          type: boolean
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/EducationItem'
+      required:
+      - type
+      - hidden
+      - items
+    ProjectsSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: projects
+        hidden:
+          type: boolean
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ProjectItem'
+      required:
+      - type
+      - hidden
+      - items
+    CertificatesSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: certificates
+        hidden:
+          type: boolean
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CertificateItem'
+      required:
+      - type
+      - hidden
+      - items
+    LanguagesSection:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SectionType'
+          - const: languages
+        hidden:
+          type: boolean
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/LanguageItem'
+      required:
+      - type
+      - hidden
+      - items
+    Content:
+      type: array
+      minItems: 1
+      maxItems: 8
+      items:
+        oneOf:
+        - $ref: '#/components/schemas/BasicsSection'
+        - $ref: '#/components/schemas/SummarySection'
+        - $ref: '#/components/schemas/SkillsSection'
+        - $ref: '#/components/schemas/ExperienceSection'
+        - $ref: '#/components/schemas/EducationSection'
+        - $ref: '#/components/schemas/ProjectsSection'
+        - $ref: '#/components/schemas/CertificatesSection'
+        - $ref: '#/components/schemas/LanguagesSection'
+      description: 첫 원소는 비숨김 basics, type 중복 금지. 배열 순서와 hidden/data/items를 jsonb에 보존. 전체 크기 200KB 산정은 OQ-003.
+    Style:
+      type: object
+      properties:
+        color:
+          $ref: '#/components/schemas/StyleColor'
+        font:
+          $ref: '#/components/schemas/StyleFont'
+        size:
+          $ref: '#/components/schemas/StyleSize'
+      required:
+      - color
+      - font
+      - size
+      description: small/medium/large와 9/10/11pt 대응은 OQ-008 확인 필요.
+    ResumeWrite:
+      type: object
+      properties:
+        title:
+          type: string
+        template:
+          $ref: '#/components/schemas/Template'
+        style:
+          $ref: '#/components/schemas/Style'
+        content:
+          $ref: '#/components/schemas/Content'
+      required:
+      - title
+      - template
+      - style
+      - content
+      description: 전체 저장의 wire 필드 제안은 승인 spec.md 입력을 투영한다. id/user_id/deleted/timestamps/완성도는 쓰기 입력이 아니다. 필드 존재
+        필수는 문자열 비어있음 허용과 별개이다.
+    Resume:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        title:
+          type: string
+        template:
+          $ref: '#/components/schemas/Template'
+        style:
+          $ref: '#/components/schemas/Style'
+        content:
+          $ref: '#/components/schemas/Content'
+        updated_at:
+          type: string
+          format: date-time
+          description: 원문 수정 시간; 시간대·정밀도 OQ-DATA-002 확인 필요.
+      required:
+      - id
+      - title
+      - template
+      - style
+      - content
+      - updated_at
+    SignupRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          pattern: ^[^\s@]+@[^\s@]+\.[^\s@]+$
+        nickname:
+          type: string
+          minLength: 2
+          maxLength: 12
+        password:
+          type: string
+          minLength: 8
+          writeOnly: true
+      required:
+      - email
+      - nickname
+      - password
+      description: 비밀번호 확인은 UI 필수이며 불일치 시 제출하지 않는다. 확인값의 서버 전송 이름·검사 위치는 OQ-004이므로 미명시 passwordConfirm 필드를 발명하지
+        않았다. 이 부분은 계약 미완료이다.
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    CreateResumeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          default: 새 이력서
+        template:
+          $ref: '#/components/schemas/Template'
+      required:
+      - template
+      description: title 생략 시 기본 제목 제안. 기본 템플릿은 원문 미명시이므로 임의 default 없음. title 빈값 및 초기 항목 상세는 OQ-003/OQ-011.
+    RenameResumeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+      required:
+      - title
+      description: 빈 문자열 거부. 공백-only·길이 상한은 OQ-003; trim 강제하지 않는다.
+    CurrentUser:
+      type: object
+      properties:
+        nickname:
+          type: string
+      required:
+      - nickname
+      description: 헤더에 필요한 nickname만 원문으로 확정 가능. 추가 me 응답 필드는 OQ-004.
+    CreatedResume:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+      required:
+      - id
+      description: 편집기 진입·새 리소스 재조회를 위한 식별자; HTTP 결과 필드 투영 제안 OQ-012.
+    UploadedPhoto:
+      type: object
+      properties:
+        photoId:
+          type: string
+          format: uuid
+      required:
+      - photoId
+x-contract-status: clarification_required
+x-shared-contract-reference:
+  technology_stack:
+    frontend: React + TypeScript + Vite
+    backend: Java 17 + Spring Boot
+    database: PostgreSQL
+    infrastructure: Docker Compose
+  version_bom:
+    spring_boot: 3.3.x
+    node: 20.x
+    vite: 5.x
+    react: 18.x
+    postgres: 16.x
+  required_outputs:
+    backend_dir: backend
+    frontend_dir: frontend
+    compose_file: infra/docker-compose.yml
+    health_endpoint: /api/health
+x-execution-contract-reference:
+  canonical_document: ../plan.md
+  source: spec.md 실행·영속성 seed 계약 및 REQ-094; plan.md는 이번 패스에서 읽지 않았다.
+  seed_projection:
+    decision_status: resolved
+    execution_model: imperative
+    persistence_technology: mybatis
+    access_mode: blocking
+    selection_source: explicit
+    blocking_priority:
+    - mybatis
+    - jpa
+    - spring-jdbc
+    conflicts: []
+  approval_gate: 'OQ-001: 원문 Spring Data JPA와 seed mybatis 충돌은 미해결이다. seed는 독립 SSOT가 아니며 resolved/conflicts=[] 또는
+    estimated:true·추정 — 사용자 미확인은 승인으로 취급하지 않는다.'
+x-open-questions:
+- 'OQ-001: spec.md에 보존된 원문 Spring Data JPA와 seed mybatis 충돌. plan.md는 이번 입력이 아니며 실제 선택/승인 및 정본 대조 전 구현 준비 완료로 판정하지
+  않는다.'
+- 'OQ-004: 가입 확인값·me 추가필드·실패 로그인 status/code·cookie·CSRF·만료 미정.'
+- 'OQ-009: 원문 오류 객체를 success/meta와 같은 레벨로 확장하는 이 문서의 제안 확인 필요.'
+- 'OQ-010: collection page/size는 미승인 후보; gate 선언과 제품정책 승인을 구분한다. pagination/filter를 확정 구현하지 않는다.'
+- 'OQ-012: operationId는 본 설계의 추적 이름이며 기존 승인 METHOD/path를 변경하지 않는다. 성공 status·본문 없는 응답 및 id 필드 표현은 미승인 후보.'
+- 'OQ-DATA-001: users/resume PK 타입·생성 전략·외래키 물리화 및 항목id'
+- 'OQ-DATA-002: timestamp 타입·시간대·정밀도·갱신 방식'
+- 'OQ-DATA-003: photoId 소유 참조 검증·고아 데이터·retention·계정삭제 cascade·잠금 정책'
+- 'OQ-013: PostgreSQL 연결 주소·DB명·계정·비밀값 확인 필요.'
+- 'OQ-014: PostgreSQL16.x의 patch·이미지 tag·digest 확인 필요.'
+- 'REQ-106: ui-design.md는 이번 허용 입력이 아니다. 실제 레퍼런스의 세부값을 이 문서에서 추정하지 않으며 후속 대조를 확인 필요로 남긴다.'
+x-error-contract:
+- 401 미로그인 -> 프론트 /login 이동
+- 404 없음·삭제된 resume·타인 소유 리소스
+- 400 입력 오류·INVALID_STRUCTURE·UNSUPPORTED_FILE_TYPE
+- '409 DUPLICATE_EMAIL: 이미 가입된 이메일입니다'
+- 413 FILE_TOO_LARGE·CONTENT_TOO_LARGE
+- 원문 code/message/field 보존. 입력 오류 일반 code 문자열과 비필드 field 표현은 OQ-009 확인 필요.
