@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.resumes.ResumeMapper">
+    <sql id="columns">
+        r.id, r.user_id AS "userId", r.title, r.template,
+        r.style::text AS style, r.content::text AS content, r.deleted,
+        r.created_at AS "createdAt", r.updated_at AS "updatedAt"
+    </sql>
+    <select id="account" resultType="com.resumecraft.resumes.ResumeAccount">
+        SELECT u.id, u.email, u.nickname
+        FROM users u
+        WHERE u.id::text = #{identity} OR u.email = #{identity}
+    </select>
+    <select id="list" resultType="com.resumecraft.resumes.ResumeRow">
+        SELECT <include refid="columns"/>
+        FROM resume r
+        WHERE r.user_id = #{userId} AND r.deleted = FALSE
+        ORDER BY r.updated_at DESC, r.id DESC
+    </select>
+    <select id="find" resultType="com.resumecraft.resumes.ResumeRow">
+        SELECT <include refid="columns"/>
+        FROM resume r
+        WHERE r.id = #{id} AND r.user_id = #{userId} AND r.deleted = FALSE
+    </select>
+    <!-- INSERT RETURNING supplies the key directly, never through a scoped joined readback. -->
+    <select id="insert" resultType="java.lang.Long" affectData="true" flushCache="true">
+        INSERT INTO resume (user_id, title, template, style, content)
+        VALUES (#{userId}, #{title}, #{template}, CAST(#{style} AS jsonb), CAST(#{content} AS jsonb))
+        RETURNING id
+    </select>
+    <update id="save">
+        UPDATE resume
+        SET title = #{title}, template = #{template}, style = CAST(#{style} AS jsonb),
+            content = CAST(#{content} AS jsonb), updated_at = clock_timestamp()
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = FALSE
+    </update>
+    <update id="rename">
+        UPDATE resume
+        SET title = #{title}, updated_at = clock_timestamp()
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = FALSE
+    </update>
+    <update id="delete">
+        UPDATE resume
+        SET deleted = TRUE
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = FALSE
+    </update>
+    <select id="ownsPhoto" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM photo p
+            WHERE p.id = CAST(#{photoId} AS uuid) AND p.user_id = #{userId}
+        )
+    </select>
+</mapper>

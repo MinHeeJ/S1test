@@ -1,0 +1,73 @@
+.photo-input {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+.photo-label {
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.photo-select {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  overflow: hidden;
+  border: 1px dashed var(--line-2);
+  border-radius: 8px;
+  background: var(--raised);
+  transition:
+    border-color var(--d1) var(--ease),
+    background-color var(--d1) var(--ease);
+}
+.photo-select:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.photo-view {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
+.resume-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.photo-loading {
+  position: absolute;
+  inset: 0;
+  background: var(--sunken);
+  font-size: 12px;
+}
+.photo-help {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+}
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.photo-input [role="alert"] {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--danger-text);
+}
+@media (pointer: coarse) {
+  .photo-actions button {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-select {
+    transition-duration: 1ms;
+  }
+}

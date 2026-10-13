@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.photos.PhotoMapper">
+    <resultMap id="photoRow" type="com.resumecraft.photos.PhotoRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.String"/>
+            <arg column="user_id" javaType="_long"/>
+            <arg column="content_type" javaType="java.lang.String"/>
+            <arg column="data" javaType="_byte[]" jdbcType="BINARY"/>
+        </constructor>
+    </resultMap>
+    <insert id="insert">
+        INSERT INTO photo (
+            id, user_id, content_type, data
+        )
+        VALUES (
+            CAST(#{id} AS UUID), #{userId}, #{contentType}, #{data,jdbcType=BINARY}
+        )
+    </insert>
+    <select id="findOwned" resultMap="photoRow">
+        SELECT
+            id::text AS id,
+            user_id,
+            content_type,
+            data
+        FROM photo
+        WHERE id = CAST(#{id} AS UUID)
+            AND user_id = #{userId}
+    </select>
+</mapper>
