@@ -1,0 +1,39 @@
+/* Same tokens and modal/control hierarchy as the existing workspace; no new visual system. */
+.invoice-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.invoice-document-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.invoice-document-actions [role="alert"] {
+  width: 100%;
+  color: var(--danger-text);
+  overflow-wrap: anywhere;
+}
+.invoice-missing-list {
+  display: grid;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+.invoice-missing-list button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.invoice-print-frame {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  left: -10000px;
+  top: 0;
+}

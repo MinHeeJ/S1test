@@ -179,6 +179,16 @@ label {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
+.document-navigation {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.document-navigation button[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: transparent;
+}
 .brand {
   display: inline-flex;
   align-items: center;
@@ -295,7 +305,7 @@ input[type="range"] {
 .editor-shell {
   height: 100svh;
   display: grid;
-  grid-template-rows: 56px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 .editor-content {
@@ -408,6 +418,17 @@ input[type="range"] {
   }
 }
 @media (max-width: 639px) {
+  .app-header {
+    flex-wrap: wrap;
+    padding-block: 8px;
+  }
+  .document-navigation {
+    order: 1;
+    width: 100%;
+  }
+  .account > span {
+    max-width: 80px;
+  }
   .page-content {
     padding: 20px 16px;
   }
