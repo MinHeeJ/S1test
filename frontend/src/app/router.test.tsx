@@ -6,6 +6,8 @@ import { useSessionStore } from "./sessionStore";
 import { useToastStore } from "../shared/Toast";
 import { configureApiClient } from "../api/apiClient";
 import { testResume } from "../pages/resumes/testResume";
+import { testInvoice } from "../pages/invoices/invoiceFixture.test";
+import { registerNavigationFlush } from "./navigationGuard";
 
 const fetcher = vi.fn<typeof fetch>();
 beforeEach(() => {
@@ -29,6 +31,11 @@ beforeEach(() => {
       return new Response(JSON.stringify({ success: true, meta: {} }));
     if (path === "/api/auth/me") return response({ nickname: "지우" });
     if (path === "/api/resumes") return response([testResume()]);
+    if (String(path).startsWith("/api/invoices?")) {
+      return response({ items: [testInvoice()], page: 1, size: 20, total: 1 });
+    }
+    if (path === `/api/invoices/${testInvoice().id}`)
+      return response(testInvoice());
     if (path === `/api/resumes/${testResume().id}`)
       return response(testResume());
     return new Response(null, { status: 204 });
@@ -192,4 +199,139 @@ it("not-found editor response stays inline without inventing or creating a resum
   expect(fetcher.mock.calls.every(([, init]) => init?.method === "GET")).toBe(
     true,
   );
+});
+
+it("authenticated header reaches the real invoice list and selected document editor", async () => {
+  const router = open();
+  await screen.findByRole("link", { name: "지원용 편집" });
+  fireEvent.click(screen.getByRole("button", { name: "견적서" }));
+  const selected = await screen.findByRole("link", {
+    name: testInvoice().title,
+  });
+  expect(router.state.location.pathname).toBe("/invoices");
+  expect(screen.getByTestId("A-INV-H-INVOICES")).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  fireEvent.click(selected);
+  expect(await screen.findByLabelText("공급자 상호")).toHaveValue(
+    testInvoice().content.supplier.name,
+  );
+  expect(router.state.location.pathname).toBe(
+    `/invoices/${testInvoice().id}/edit`,
+  );
+  expect(fetcher.mock.calls.map(([path]) => path)).toContain(
+    `/api/invoices/${testInvoice().id}`,
+  );
+});
+
+it.each([
+  "/invoices",
+  `/invoices/${testInvoice().id}/edit`,
+  `/print/invoice/${testInvoice().id}`,
+])(
+  "anonymous invoice entry %s reaches login without reading private documents",
+  async (path) => {
+    useSessionStore.getState().clear();
+    const router = open(path);
+    expect(await screen.findByLabelText("비밀번호")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/login");
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        String(url).startsWith("/api/invoices"),
+      ),
+    ).toBe(false);
+    expect(
+      screen.queryByRole("navigation", { name: "문서 메뉴" }),
+    ).not.toBeInTheDocument();
+  },
+);
+
+it("invoice top-level print does not fetch document data or expose the shell", () => {
+  open(`/print/invoice/${testInvoice().id}`);
+  expect(
+    screen.getByText("인쇄 화면은 편집기의 PDF 내보내기에서만 열 수 있습니다."),
+  ).toBeInTheDocument();
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(screen.queryByText("ResumeCraft")).not.toBeInTheDocument();
+});
+
+it("invoice iframe route uses the real A4 renderer without application chrome", async () => {
+  vi.stubGlobal("top", {});
+  const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+  open(`/print/invoice/${testInvoice().id}`);
+  expect(await screen.findByTestId("invoice-paper")).toHaveTextContent(
+    testInvoice().doc_no,
+  );
+  await waitFor(() => expect(print).toHaveBeenCalledOnce());
+  expect(fetcher.mock.calls.map(([path]) => path)).toContain(
+    `/api/invoices/${testInvoice().id}`,
+  );
+  expect(screen.queryByText("ResumeCraft")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("navigation", { name: "문서 메뉴" }),
+  ).not.toBeInTheDocument();
+});
+
+it("invoice missing document keeps the real editor route and never creates replacement data", async () => {
+  fetcher.mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        success: false,
+        meta: {},
+        code: "404",
+        message: "문서를 찾을 수 없습니다.",
+        field: null,
+      }),
+      { status: 404 },
+    ),
+  );
+  const router = open(`/invoices/${testInvoice().id}/edit`);
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "문서를 찾을 수 없습니다.",
+  );
+  expect(router.state.location.pathname).toBe(
+    `/invoices/${testInvoice().id}/edit`,
+  );
+  expect(screen.queryByLabelText("공급자 상호")).not.toBeInTheDocument();
+  expect(fetcher.mock.calls.every(([, init]) => init?.method === "GET")).toBe(
+    true,
+  );
+});
+
+it("invoice header departure waits for the actual dirty editor snapshot PUT", async () => {
+  const router = open(`/invoices/${testInvoice().id}/edit`);
+  const title = await screen.findByLabelText("제목");
+  fireEvent.change(title, { target: { value: "메뉴 이동 전 최신 제목" } });
+  fireEvent.click(screen.getByTestId("A-INE-H-RESUMES"));
+  await screen.findByRole("link", { name: "지원용 편집" });
+  expect(router.state.location.pathname).toBe("/resumes");
+  const calls = fetcher.mock.calls;
+  const saved = calls.findIndex(([, init]) => init?.method === "PUT");
+  const listed = calls.findIndex(([path]) => path === "/api/resumes");
+  expect(saved).toBeGreaterThanOrEqual(0);
+  expect(listed).toBeGreaterThan(saved);
+  expect(JSON.parse(calls[saved][1]!.body as string).title).toBe(
+    "메뉴 이동 전 최신 제목",
+  );
+});
+
+it("failed document menu flush retains the current screen and does not request its destination", async () => {
+  const router = open();
+  await screen.findByRole("link", { name: "지원용 편집" });
+  const remove = registerNavigationFlush(async () => {
+    throw new Error("저장 실패");
+  });
+  try {
+    fireEvent.click(screen.getByRole("button", { name: "견적서" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("저장 실패");
+    expect(router.state.location.pathname).toBe("/resumes");
+    expect(
+      fetcher.mock.calls.some(([path]) =>
+        String(path).startsWith("/api/invoices"),
+      ),
+    ).toBe(false);
+  } finally {
+    remove();
+  }
 });

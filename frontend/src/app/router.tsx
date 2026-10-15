@@ -8,15 +8,25 @@ import { AppShell } from "./AppShell";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authScreens } from "../pages/auth/authScreens";
 import { resumeScreens } from "../pages/resumes/screens";
+import { invoiceScreens } from "../pages/invoices/screens";
 
 /** Shared registration owns feature imports; feature registries import router types only. */
 export const applicationScreens: ScreenRegistration[] = [
   ...authScreens,
   ...resumeScreens,
+  ...invoiceScreens,
 ];
 
 export interface ScreenRegistration {
-  path: "/login" | "/signup" | "/resumes" | "/resumes/:id/edit" | "/print/:id";
+  path:
+    | "/login"
+    | "/signup"
+    | "/resumes"
+    | "/resumes/:id/edit"
+    | "/print/:id"
+    | "/invoices"
+    | "/invoices/:id/edit"
+    | "/print/invoice/:id";
   element: ReactNode;
 }
 
@@ -28,9 +38,9 @@ export function applicationRoutes(
     applicationScreens.find((screen) => screen.path === path)?.element ?? (
       <p role="alert">화면을 연결하지 못했습니다.</p>
     );
-  const framedPrint =
+  const framedPrint = (path: "/print/:id" | "/print/invoice/:id") =>
     window.self !== window.top ? (
-      page("/print/:id")
+      page(path)
     ) : (
       <p>인쇄 화면은 편집기의 PDF 내보내기에서만 열 수 있습니다.</p>
     );
@@ -46,13 +56,21 @@ export function applicationRoutes(
           children: [
             { path: "/resumes", element: page("/resumes") },
             { path: "/resumes/:id/edit", element: page("/resumes/:id/edit") },
+            { path: "/invoices", element: page("/invoices") },
+            { path: "/invoices/:id/edit", element: page("/invoices/:id/edit") },
           ],
         },
       ],
     },
     {
       element: <ProtectedRoute />,
-      children: [{ path: "/print/:id", element: framedPrint }],
+      children: [
+        { path: "/print/:id", element: framedPrint("/print/:id") },
+        {
+          path: "/print/invoice/:id",
+          element: framedPrint("/print/invoice/:id"),
+        },
+      ],
     },
     { path: "*", element: <p role="alert">화면을 찾을 수 없습니다.</p> },
   ];

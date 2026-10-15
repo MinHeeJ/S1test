@@ -1,0 +1,322 @@
+.invoices-library {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px;
+}
+.invoice-library-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.invoice-library-heading p {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.invoice-actions [aria-pressed="true"] {
+  background: var(--sunken);
+  box-shadow: var(--shadow-1);
+}
+.invoice-table-scroll {
+  overflow-x: auto;
+}
+.invoice-list-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+.invoice-list-table th {
+  text-align: left;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.invoice-list-table th,
+.invoice-list-table td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.invoice-list-table td {
+  position: relative;
+  overflow-wrap: anywhere;
+}
+.invoice-list-table tbody tr {
+  cursor: pointer;
+  transition: background var(--d1);
+}
+.invoice-list-table tbody tr:hover {
+  background: var(--hover);
+}
+.invoice-list-table a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.invoice-list-table a:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+.invoice-row-menu {
+  display: grid;
+  position: absolute;
+  z-index: 10;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--raised);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+}
+.invoice-paid {
+  border-radius: 6px;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  padding: 4px 8px;
+}
+.invoice-editor {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 32px);
+  min-height: 0;
+  overflow: hidden;
+}
+.invoice-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+}
+.invoice-toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.invoice-toolbar .invoice-field {
+  max-width: 220px;
+}
+.invoice-toolbar [role="status"] {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.invoice-panes {
+  display: grid;
+  grid-template-columns: minmax(350px, 1fr) minmax(0, 1.2fr);
+  min-height: 0;
+  flex: 1;
+}
+.invoice-form,
+.invoice-preview {
+  overflow: auto;
+  min-height: 0;
+  min-width: 0;
+  overscroll-behavior: contain;
+}
+.invoice-form {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface);
+}
+.invoice-preview {
+  padding: 24px;
+  background: var(--sunken);
+}
+.invoice-section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+}
+.invoice-section h2 {
+  font-family: inherit;
+  font-size: 16px;
+  margin: 0;
+}
+.invoice-field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+.invoice-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+.invoice-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+}
+.invoice-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.invoice-item h3,
+.invoice-item output,
+.invoice-item .invoice-actions {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.invoice-paid-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.invoice-paid-control input {
+  width: auto;
+}
+.invoice-error {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  padding: 12px;
+  margin: 0;
+}
+.invoice-warning {
+  color: var(--warn-text);
+  background: var(--warn-soft);
+  padding: 10px;
+}
+.invoice-mobile-tabs {
+  display: none;
+}
+.invoice-print-frame {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  pointer-events: none;
+}
+.invoice-paper {
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 18mm;
+  color: #222;
+  background: white;
+  font-size: 11pt;
+  line-height: 1.5;
+  box-shadow: var(--shadow-page);
+  overflow-wrap: anywhere;
+}
+.invoice-paper h1 {
+  text-align: center;
+  color: var(--invoice-color);
+  font-family: inherit;
+}
+.invoice-paper h2 {
+  font-family: inherit;
+  font-size: 12pt;
+}
+.invoice-paper table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+.invoice-paper th,
+.invoice-paper td {
+  padding: 8px 4px;
+  border: 1px solid #ddd;
+  white-space: pre-wrap;
+}
+.invoice-paper th {
+  color: var(--invoice-color);
+}
+.invoice-paper thead {
+  display: table-header-group;
+}
+.invoice-paper tr {
+  break-inside: avoid;
+}
+.invoice-stamp {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-left: 12px;
+}
+.invoice-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.invoice-totals dd {
+  text-align: right;
+  margin: 0;
+}
+.invoice-notes p {
+  white-space: pre-wrap;
+  break-inside: auto;
+}
+.invoice-paper .invoice-supplier,
+.invoice-paper .invoice-totals {
+  break-inside: avoid;
+}
+@media (max-width: 1023px) {
+  .invoice-mobile-tabs {
+    display: flex;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .invoice-panes {
+    display: block;
+    overflow: hidden;
+  }
+  .invoice-form,
+  .invoice-preview {
+    height: 100%;
+  }
+  .invoice-panes[data-tab="input"] .invoice-preview {
+    display: none;
+  }
+  .invoice-panes[data-tab="preview"] .invoice-form {
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .invoices-library {
+    padding: 20px 16px;
+  }
+  .invoice-library-heading {
+    display: block;
+  }
+  .invoice-toolbar {
+    gap: 8px;
+  }
+  .invoice-toolbar .invoice-field {
+    max-width: 140px;
+  }
+  .invoice-list-table {
+    min-width: 720px;
+  }
+}
+@page {
+  size: A4;
+  margin: 0;
+}
+@media print {
+  .invoice-print-document {
+    margin: 0;
+    padding: 0;
+  }
+  .invoice-paper {
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .invoice-notes {
+    break-inside: auto;
+  }
+}
