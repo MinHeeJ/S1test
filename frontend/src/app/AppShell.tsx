@@ -46,6 +46,30 @@ export function AppShell() {
           ResumeCraft
         </span>
         {user && (
+          <nav aria-label="문서 메뉴">
+            {[
+              { path: "/resumes", label: "이력서" },
+              { path: "/invoices", label: "견적서" },
+            ].map((menu) => (
+              <a
+                key={menu.path}
+                href={menu.path}
+                data-testid={`menu-${menu.path.slice(1)}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void flushBeforeNavigation()
+                    .then(() => navigate(menu.path))
+                    .catch((error: Error) => {
+                      useToastStore.getState().show(error.message);
+                    });
+                }}
+              >
+                {menu.label}
+              </a>
+            ))}
+          </nav>
+        )}
+        {user && (
           <div className="account">
             <span>{user.nickname}</span>
             <button

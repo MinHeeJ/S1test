@@ -8,15 +8,27 @@ import { AppShell } from "./AppShell";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authScreens } from "../pages/auth/authScreens";
 import { resumeScreens } from "../pages/resumes/screens";
+import { invoiceScreens } from "../pages/invoices/screens";
+import InvoicePrintPage from "../pages/invoicesops/SCR-INVOICE-PRINT";
 
 /** Shared registration owns feature imports; feature registries import router types only. */
 export const applicationScreens: ScreenRegistration[] = [
   ...authScreens,
   ...resumeScreens,
+  ...invoiceScreens.filter((screen) => screen.path !== "/print/invoice/:id"),
+  { path: "/print/invoice/:id", element: <InvoicePrintPage /> },
 ];
 
 export interface ScreenRegistration {
-  path: "/login" | "/signup" | "/resumes" | "/resumes/:id/edit" | "/print/:id";
+  path:
+    | "/login"
+    | "/signup"
+    | "/resumes"
+    | "/resumes/:id/edit"
+    | "/print/:id"
+    | "/invoices"
+    | "/invoices/:id/edit"
+    | "/print/invoice/:id";
   element: ReactNode;
 }
 
@@ -45,6 +57,8 @@ export function applicationRoutes(
           element: <ProtectedRoute />,
           children: [
             { path: "/resumes", element: page("/resumes") },
+            { path: "/invoices", element: page("/invoices") },
+            { path: "/invoices/:id/edit", element: page("/invoices/:id/edit") },
             { path: "/resumes/:id/edit", element: page("/resumes/:id/edit") },
           ],
         },
@@ -52,7 +66,10 @@ export function applicationRoutes(
     },
     {
       element: <ProtectedRoute />,
-      children: [{ path: "/print/:id", element: framedPrint }],
+      children: [
+        { path: "/print/:id", element: framedPrint },
+        { path: "/print/invoice/:id", element: page("/print/invoice/:id") },
+      ],
     },
     { path: "*", element: <p role="alert">화면을 찾을 수 없습니다.</p> },
   ];

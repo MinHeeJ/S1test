@@ -1,0 +1,79 @@
+.invoice-document {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 16mm;
+  background: var(--paper, white);
+  overflow: visible;
+  font-family: "Hanken Grotesk Variable", system-ui, sans-serif;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.invoice-document h1 {
+  text-align: center;
+  font-family: inherit;
+}
+.invoice-document h2 {
+  font-family: inherit;
+  font-size: 16px;
+}
+.invoice-document table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.invoice-document th,
+.invoice-document td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line, #ddd);
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+.invoice-document dl {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 6px;
+}
+.invoice-document dd {
+  margin: 0;
+}
+.invoice-stamp {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+.invoice-document .invoice-notes p {
+  white-space: pre-wrap;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: white;
+  }
+  .invoice-document {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .invoice-document thead {
+    display: table-header-group;
+  }
+  .invoice-document tr {
+    break-inside: avoid;
+  }
+  .invoice-document h2 {
+    break-after: avoid;
+  }
+  .invoice-document {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

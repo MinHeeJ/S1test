@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.invoicesops.InvoiceCopyMapper">
+    <resultMap id="invoiceCopyRow" type="com.resumecraft.invoicesops.InvoiceCopyRow">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="doc_type" javaType="java.lang.String"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="content" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+    <select id="find" resultMap="invoiceCopyRow">
+        SELECT id, doc_type, title, content::text AS content
+        FROM invoice
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND deleted = FALSE
+        FOR SHARE
+    </select>
+    <select id="maximum" resultType="int">
+        SELECT COALESCE(MAX(RIGHT(doc_no, 4)::integer), 0)
+        FROM invoice
+        WHERE user_id = #{userId}
+            AND doc_type = #{docType}
+            AND doc_no ~ ('^' || #{prefix} || '[0-9]{4}$')
+    </select>
+    <select id="insert" resultType="java.lang.Long" affectData="true" flushCache="true">
+        INSERT INTO invoice (
+            user_id, doc_type, doc_no, source_quote_id, title, content,
+            supply_amount, vat_amount, total_amount, paid
+        )
+        VALUES (
+            #{userId}, #{docType}, #{docNo}, #{sourceQuoteId,jdbcType=BIGINT}, #{title}, CAST(#{content} AS jsonb),
+            #{supply}, #{vat}, #{total}, FALSE
+        )
+        RETURNING id
+    </select>
+</mapper>
