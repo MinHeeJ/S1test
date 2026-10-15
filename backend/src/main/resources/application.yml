@@ -7,6 +7,9 @@ spring:
       connection-timeout: 5000
   flyway:
     enabled: true
+    # Dollar-quoted JSON seeds are literal SQL, not Flyway ${...} placeholders.
+    # PostgreSQL dollar-quoted JSON is literal SQL, not a Flyway placeholder.
+    placeholder-replacement: false
   servlet:
     multipart:
       max-file-size: 3MB

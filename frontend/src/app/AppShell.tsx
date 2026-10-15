@@ -13,6 +13,27 @@ export function AppShell() {
   const [busy, setBusy] = useState(false);
   const editor = location.pathname.endsWith("/edit");
   const auth = ["/login", "/signup"].includes(location.pathname);
+  const menuPrefix = location.pathname.startsWith("/invoices")
+    ? editor
+      ? "A-INE"
+      : "A-INV"
+    : editor
+      ? "A-ED"
+      : "A-RES";
+  async function openDocuments(path: "/resumes" | "/invoices") {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await flushBeforeNavigation();
+      navigate(path);
+    } catch (error) {
+      useToastStore
+        .getState()
+        .show(error instanceof Error ? error.message : "이동 실패");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function logout() {
     if (busy) return;
     setBusy(true);
@@ -45,6 +66,30 @@ export function AppShell() {
           </svg>
           ResumeCraft
         </span>
+        {user && (
+          <nav className="document-navigation" aria-label="문서 메뉴">
+            <button
+              data-testid={`${menuPrefix}-H-RESUMES`}
+              disabled={busy}
+              aria-current={
+                location.pathname.startsWith("/resumes") ? "page" : undefined
+              }
+              onClick={() => void openDocuments("/resumes")}
+            >
+              이력서
+            </button>
+            <button
+              data-testid={`${menuPrefix}-H-INVOICES`}
+              disabled={busy}
+              aria-current={
+                location.pathname.startsWith("/invoices") ? "page" : undefined
+              }
+              onClick={() => void openDocuments("/invoices")}
+            >
+              견적서
+            </button>
+          </nav>
+        )}
         {user && (
           <div className="account">
             <span>{user.nickname}</span>

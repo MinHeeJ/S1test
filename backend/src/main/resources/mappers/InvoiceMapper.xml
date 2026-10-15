@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resumecraft.invoices.InvoiceMapper">
+    <sql id="columns">
+        i.id, i.user_id AS "userId", i.doc_type AS "docType", i.doc_no AS "docNo",
+        i.source_quote_id AS "sourceQuoteId", i.title, i.content::text AS content,
+        i.supply_amount AS "supplyAmount", i.vat_amount AS "vatAmount", i.total_amount AS "totalAmount",
+        i.paid, i.deleted, i.created_at AS "createdAt", i.updated_at AS "updatedAt"
+    </sql>
+    <sql id="scope">
+        i.user_id = #{userId} AND i.deleted = FALSE
+        <if test="type != null">AND i.doc_type = #{type}</if>
+    </sql>
+    <select id="account" resultType="com.resumecraft.resumes.ResumeAccount">
+        SELECT u.id, u.email, u.nickname
+        FROM users u
+        WHERE u.id::text = #{identity} OR u.email = #{identity}
+    </select>
+    <select id="list" resultType="com.resumecraft.invoices.InvoiceRow">
+        SELECT <include refid="columns"/>
+        FROM invoice i
+        WHERE <include refid="scope"/>
+        ORDER BY i.updated_at DESC, i.id DESC
+        LIMIT 20 OFFSET #{offset}
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM invoice i
+        WHERE <include refid="scope"/>
+    </select>
+    <select id="find" resultType="com.resumecraft.invoices.InvoiceRow">
+        SELECT <include refid="columns"/>
+        FROM invoice i
+        WHERE i.id = #{id} AND i.user_id = #{userId} AND i.deleted = FALSE
+    </select>
+    <select id="latest" resultType="com.resumecraft.invoices.InvoiceRow">
+        SELECT <include refid="columns"/>
+        FROM invoice i
+        WHERE i.user_id = #{userId} AND i.deleted = FALSE
+        ORDER BY i.updated_at DESC, i.id DESC
+        LIMIT 1
+    </select>
+    <select id="maximum" resultType="int">
+        SELECT COALESCE(MAX(RIGHT(i.doc_no, 4)::integer), 0)
+        FROM invoice i
+        WHERE i.user_id = #{userId} AND i.doc_no LIKE CONCAT(#{prefix}, '%')
+    </select>
+    <select id="insert" resultType="java.lang.Long" affectData="true" flushCache="true">
+        INSERT INTO invoice (
+            user_id, doc_type, doc_no, source_quote_id, title, content,
+            supply_amount, vat_amount, total_amount
+        )
+        VALUES (
+            #{userId}, #{type}, #{number}, #{sourceQuoteId,jdbcType=BIGINT}, #{title}, CAST(#{content} AS jsonb),
+            #{supply}, #{vat}, #{total}
+        )
+        RETURNING id
+    </select>
+    <update id="save">
+        UPDATE invoice
+        SET title = #{title}, content = CAST(#{content} AS jsonb), paid = #{paid},
+            supply_amount = #{supply}, vat_amount = #{vat}, total_amount = #{total}, updated_at = clock_timestamp()
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = FALSE
+    </update>
+    <update id="delete">
+        UPDATE invoice
+        SET deleted = TRUE
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = FALSE
+    </update>
+    <select id="ownsPhoto" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM photo p
+            WHERE p.id = CAST(#{photoId} AS uuid) AND p.user_id = #{userId}
+        )
+    </select>
+</mapper>
